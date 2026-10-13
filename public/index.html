@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Glass Dashboard</title>
+<meta name="description" content="A local dashboard for whatever you track: projects, repos, goals." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111'/%3E%3Ccircle cx='16' cy='16' r='7.5' fill='none' stroke='%23e9e9e7' stroke-width='4'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+<script>
+  // Apply the saved theme before first paint
+  try { const t = localStorage.getItem("glass-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+</script>
+<style>
+:root {
+  --bg: #e9e9e7;
+  --rail: #f3f3f1;
+  --fg: #111;
+  --mute: rgba(17, 17, 17, 0.62);
+  --faint: rgba(17, 17, 17, 0.3);
+  --line: rgba(17, 17, 17, 0.14);
+  --err: #b3261e;
+  --warn: #8a5a00;
+  --prism: linear-gradient(90deg, #ff3b3b, #ffb000, #2fd27a, #1e90ff, #a24bff);
+  --ease: cubic-bezier(0.7, 0, 0.2, 1);
+  --pad: 40px;
+  --rail-w: 340px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111; --rail: #181818; --fg: #e9e9e7; --mute: rgba(233, 233, 231, 0.62); --faint: rgba(233, 233, 231, 0.28);
+    --line: rgba(233, 233, 231, 0.16); --err: #ef7a62; --warn: #e0a43a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111; --rail: #181818; --fg: #e9e9e7; --mute: rgba(233, 233, 231, 0.62); --faint: rgba(233, 233, 231, 0.28);
+  --line: rgba(233, 233, 231, 0.16); --err: #ef7a62; --warn: #e0a43a; color-scheme: dark;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scrollbar-color: var(--faint) var(--bg); }
+body {
+  min-height: 100vh; background: var(--bg); color: var(--fg);
+  font-family: "Inter Tight", system-ui, sans-serif; font-size: 15px; -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  transition: background 0.4s var(--ease), color 0.4s var(--ease);
+}
+::selection { background: var(--fg); color: var(--bg); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--faint); border: 2px solid var(--bg); border-radius: 10px; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.ico { width: 1em; height: 1em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+.label {
+  display: flex; align-items: baseline; gap: 14px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute);
+}
+.label > span:first-child { color: var(--fg); font-variant-numeric: tabular-nums; }
+
+/* ================= Rail ================= */
+.rail {
+  position: sticky; top: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+  background: var(--rail); border-right: 1px solid var(--line);
+  transition: background 0.4s var(--ease);
+}
+.rail-head { padding: 26px 24px 0; }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.brand a { font-weight: 900; font-size: 20px; letter-spacing: -0.02em; text-transform: uppercase; text-decoration: none; }
+.brand span { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.search { position: relative; display: block; margin-top: 22px; }
+.search .ico { position: absolute; left: 0; top: 50%; translate: 0 -50%; font-size: 16px; color: var(--mute); }
+.search input {
+  width: 100%; padding: 10px 28px 10px 26px; border: 0; border-bottom: 1px solid var(--fg); border-radius: 0;
+  background: transparent; color: var(--fg); font: 500 16px "Inter Tight", system-ui, sans-serif; outline: none; caret-color: #1e90ff;
+}
+.search input::-webkit-search-cancel-button { display: none; }
+.search input::placeholder { color: var(--mute); }
+.search input:focus { border-bottom-width: 2px; padding-bottom: 9px; }
+.search kbd {
+  position: absolute; right: 0; top: 50%; translate: 0 -50%; min-width: 20px; padding: 1px 6px;
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+  font: 600 11px "Inter Tight", sans-serif; color: var(--mute); text-align: center;
+}
+.tabs { display: flex; flex-wrap: wrap; gap: 6px 4px; margin-top: 16px; }
+.tabs button {
+  padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s;
+}
+.tabs button:hover { border-color: var(--fg); }
+.tabs button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tabs .count { margin-left: 5px; opacity: 0.6; font-variant-numeric: tabular-nums; }
+
+.rail-list { flex: 1; overflow-y: auto; margin-top: 18px; padding-bottom: 12px; border-top: 1px solid var(--line); overscroll-behavior: contain; }
+.group h2 { position: sticky; top: 0; z-index: 2; padding: 16px 24px 8px; background: var(--rail); }
+.row {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline;
+  width: 100%; padding: 10px 24px; border: 0; background: transparent; text-align: left; cursor: pointer;
+  overflow: hidden; isolation: isolate; text-decoration: none;
+}
+.row::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--fg);
+  transform: scaleY(0); transform-origin: bottom; transition: transform 0.45s var(--ease);
+}
+.row > * { transition: color 0.3s var(--ease); }
+.row:hover::before, .row[aria-current="page"]::before { transform: scaleY(1); }
+.row:hover > *, .row[aria-current="page"] > *, .row:hover .row-sub, .row[aria-current="page"] .row-sub { color: var(--bg); }
+.row:focus-visible { outline-offset: -2px; }
+.row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; }
+.row-ver { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.row-sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.row-overview { padding-top: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.row-overview .row-name { font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; }
+
+/* Status marks: one legend everywhere */
+.mark { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mark i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.mark--accent i { background: var(--prism); }
+.mark--plain i { display: none; }
+.mark--fail i { background: var(--err); }
+.mark--pending i { background: var(--warn); }
+.mark--new i { width: 14px; height: 2px; border-radius: 1px; background: var(--prism); }
+.mark .ico { font-size: 12px; }
+
+.rail-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 24px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line);
+  font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute);
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px;
+  border: 1px solid var(--fg); border-radius: 999px; background: transparent; cursor: pointer;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--fg);
+  transition: background 0.25s var(--ease), color 0.25s var(--ease);
+}
+.btn:hover { background: var(--fg); color: var(--bg); }
+.btn[disabled] { cursor: progress; opacity: 0.6; }
+.btn.is-busy .ico { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { rotate: 1turn; } }
+
+/* skeleton rows */
+.skel { padding: 12px 24px; }
+.skel i { display: block; height: 12px;background: linear-gradient(90deg, var(--line) 0 40%, var(--faint) 50%, var(--line) 60% 100%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
+.skel i + i { width: 40%; margin-top: 8px; height: 9px; }
+@keyframes shimmer { to { background-position: -150% 0; } }
+
+/* ================= Sheet ================= */
+.sheet { min-width: 0; }
+.sheet-bar {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: 64px; padding: 0 var(--pad); background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
+}
+.crumb { display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 13px; font-weight: 600; }
+.crumb a { text-decoration: none; white-space: nowrap; }
+.crumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.crumb .muted { color: var(--mute); font-weight: 500; }
+.crumb .pill { padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mute); }
+.back { display: none; }
+.bar-right { display: flex; align-items: center; gap: 14px; }
+.theme { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 999px; }
+.theme button { display: grid; place-items: center; width: 32px; height: 30px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; color: var(--mute); font-size: 15px; transition: background 0.25s var(--ease), color 0.25s var(--ease); }
+.theme button:hover { color: var(--fg); }
+.theme button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+.band { position: relative; height: clamp(220px, 34vh, 330px); overflow: hidden; border-bottom: 1px solid var(--line); }
+.band canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.band-title {
+  position: absolute; inset: 0; display: flex; align-items: center; padding: 0 var(--pad);
+  font-weight: 900; font-size: clamp(44px, 8vw, 150px); line-height: 0.84; letter-spacing: -0.045em; text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.gl-ready .band-title { clip-path: inset(50%); white-space: nowrap; width: 1px; height: 1px; overflow: hidden; }
+
+.sheet-body { padding: 40px var(--pad) 120px; }
+.lede { max-width: 34ch; font-size: clamp(22px, 2.4vw, 36px); font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; text-wrap: pretty; }
+.lede .w { opacity: 0.14; transition: opacity 0.5s var(--ease); }
+.lede.is-lit .w { opacity: 1; }
+.lede .none { color: var(--mute); }
+
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 44px; border-top: 1.5px solid var(--fg); }
+.facts > div { padding: 16px 20px 18px 0; border-bottom: 1px solid var(--line); }
+.facts > div:not(:nth-child(4n + 1)) { padding-left: 20px; border-left: 1px solid var(--line); }
+.facts dt { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.facts dd { margin-top: 8px; font-size: clamp(22px, 2vw, 30px); font-weight: 900; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.facts dd small { display: block; margin-top: 8px; font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--mute); }
+.facts dd.absent { color: var(--mute); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; line-height: 1.2; }
+.facts dd .prism { background: var(--prism); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.facts dd .fail { color: var(--err); }
+
+.block { margin-top: 88px; }
+.block-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.block-head h2 { font-size: 12px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { padding: 5px 12px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--mute); transition: background 0.25s var(--ease), color 0.25s var(--ease); }
+.seg button:hover { color: var(--fg); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+/* Timeline */
+.block-head .tl-head { display: flex; align-items: baseline; gap: 14px; font-size: clamp(20px, 1.8vw, 28px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.tl-head .idx { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.tl-head b { font-weight: 900; font-variant-numeric: tabular-nums; }
+.tl { position: relative; display: grid; grid-template-columns: repeat(52, minmax(0, 1fr)); gap: 3px; align-items: end; height: 140px; border-bottom: 1px solid var(--fg); }
+.tl i { display: block; min-height: 2px; background: var(--faint); transform-origin: bottom; transition: background 0.35s var(--ease); }
+.tl i.in { background: var(--fg); }
+.tl i:hover { background: var(--prism) top / 100% 3px no-repeat, var(--fg); }
+.tl-window { position: absolute; bottom: -4px; height: 3px; background: var(--prism); transition: left 0.5s var(--ease), width 0.5s var(--ease); }
+.tl-months { position: relative; height: 22px; margin-top: 8px; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.tl-months span { position: absolute; top: 0; white-space: nowrap; }
+.tl-tip {
+  position: fixed; z-index: 30; left: 0; top: 0; pointer-events: none; padding: 6px 10px; border-radius: 6px;
+  background: var(--fg); color: var(--bg); font-size: 12px; font-weight: 600; white-space: nowrap; opacity: 0; transition: opacity 0.15s;
+}
+
+/* Lists */
+.list { list-style: none; border-top: 1px solid var(--fg); }
+.list li { border-bottom: 1px solid var(--line); }
+.list a, .list .li {
+  display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 16px; align-items: baseline;
+  padding: 14px 0; text-decoration: none; font-size: 15px; line-height: 1.45;
+}
+/* The world's row wipe: ink rises from the bottom and the text turns paper.
+   Content stays on the column grid; the fill bleeds 12px into the gutter instead. */
+.list a, .links a { position: relative; isolation: isolate; }
+.list a::before, .links a::before {
+  content: ""; position: absolute; inset: 0 -12px; z-index: -1; background: var(--fg);
+  transform: scaleY(0); transform-origin: bottom; transition: transform 0.5s var(--ease);
+}
+.list a:hover::before, .links a:hover::before { transform: scaleY(1); }
+.list a *, .links a * { transition: color 0.3s var(--ease); }
+.list a:hover, .list a:hover *, .links a:hover, .links a:hover * { color: var(--bg); }
+.list a:hover .mark--fail i { background: var(--bg); }
+.list .k { font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+.list .t { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.list .t em { font-style: normal; font-weight: 500; color: var(--mute); }
+.list .r { font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.list .r .add { color: var(--fg); }
+.empty { padding: 18px 0; border-top: 1px solid var(--fg); color: var(--mute); font-size: 15px; }
+.btn.more { margin-top: 18px; }
+.note { max-width: 62ch; margin-top: 12px; font-size: 13px; line-height: 1.5; color: var(--mute); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; }
+.sub-gap { height: 28px; }
+
+/* Links */
+.links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--fg); }
+.links a {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 20px 22px 0;
+  border-bottom: 1px solid var(--line); text-decoration: none; min-width: 0;
+}
+.links a:nth-child(odd)::before { right: 0; }
+.links a:nth-child(even) { padding-left: 20px; padding-right: 0; border-left: 1px solid var(--line); }
+.links a:nth-child(even)::before { left: 0; }
+.links strong { display: block; font-size: clamp(20px, 1.8vw, 28px); font-weight: 900; letter-spacing: -0.03em; text-transform: uppercase; }
+.links small { display: block; margin-top: 4px; font-size: 13px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.links span { min-width: 0; }
+.links .ico { font-size: 24px; transition: rotate 0.5s var(--ease); }
+.links a:hover .ico { rotate: 45deg; }
+.langs { display: flex; height: 6px; margin-top: 28px; gap: 2px; }
+.langs i { display: block; background: var(--fg); }
+.langs-key { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; font-size: 13px; color: var(--mute); }
+.langs-key b { color: var(--fg); font-weight: 600; }
+
+/* Overview */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 44px; border-top: 1.5px solid var(--fg); }
+.stats > div { padding: 20px 20px 0 0; }
+.stats > div + div { padding-left: 20px; border-left: 1px solid var(--line); }
+.stats > div:nth-child(4n + 1) { padding-left: 0; border-left: 0; }
+.stats > div:nth-child(n + 5) { margin-top: 32px; }
+.stats b { display: block; font-size: clamp(44px, 5.6vw, 96px); font-weight: 900; line-height: 0.9; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.stats span { display: block; margin-top: 12px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.attn a { grid-template-columns: 200px minmax(0, 1fr) auto; }
+
+/* Notices */
+.notice { max-width: 60ch; padding: 32px 0; }
+.notice h2 { font-size: clamp(28px, 3vw, 44px); font-weight: 900; letter-spacing: -0.035em; text-transform: uppercase; line-height: 0.95; }
+.notice p { margin-top: 14px; font-size: 16px; line-height: 1.55; color: var(--mute); }
+.notice code { padding: 2px 6px; border-radius: 4px; background: var(--line); color: var(--fg); font-size: 14px; }
+.notice .btn { margin-top: 22px; }
+.notice--inline { max-width: none; padding: 0 0 32px; }
+.notice--inline p { margin-top: 6px; color: var(--fg); }
+.notice--inline b { color: var(--err); }
+
+/* Reveals inside the sheet */
+.rv { transition: opacity 0.8s var(--ease), translate 0.8s var(--ease); }
+.js .rv:not(.is-in) { opacity: 0; translate: 0 24px; }
+
+/* ================= Responsive ================= */
+@media (max-width: 1180px) {
+  :root { --rail-w: 300px; --pad: 32px; }
+  .facts, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts > div:not(:nth-child(4n + 1)) { padding-left: 0; border-left: 0; }
+  .facts > div:nth-child(even), .stats > div:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); }
+  .stats > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .stats > div:nth-child(n + 3) { margin-top: 32px; }
+  .cols { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+@media (max-width: 860px) {
+  :root { --pad: 22px; }
+  body { display: block; }
+  .rail { position: static; height: auto; min-height: 100dvh; border-right: 0; }
+  .rail-list { overflow: visible; }
+  .rail-foot { position: sticky; bottom: 0; background: var(--rail); }
+  .sheet { display: none; }
+  body.show-sheet .rail { display: none; }
+  body.show-sheet .sheet { display: block; }
+  .back { display: inline-flex; }
+  .crumb .pill, .crumb .muted, .crumb .owner { display: none; }
+  .crumb a { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .links { grid-template-columns: minmax(0, 1fr); }
+  .links a:nth-child(even) { padding-left: 0; border-left: 0; }
+  .links a:nth-child(n)::before { inset: 0 -12px; }
+  .list a, .list .li, .attn a { grid-template-columns: 64px minmax(0, 1fr); }
+  .attn a { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .list .r { grid-column: 2; text-align: left; }
+  .attn .r { grid-column: 1; }
+  .tl { gap: 1px; height: 110px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation: none !important; }
+  .js .rv:not(.is-in) { opacity: 1; translate: none; }
+  .lede .w { opacity: 1; }
+}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add("js");</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" /></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4M10 6l-6 6 6 6" /></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></symbol>
+  <symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5" /><path d="M8 20h8M12 16v4" /></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1" /><path d="M5 9v10h14V9M10 13h4" /></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l9 9-8 8-9-9Z" /><circle cx="7.5" cy="8.5" r="1.3" /></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10" /></symbol>
+  <symbol id="i-fork" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="12" cy="19" r="2" /><path d="M6 7v2a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 12v5" /></symbol>
+</svg>
+
+<aside class="rail" aria-label="Items">
+  <div class="rail-head">
+    <div class="brand"><a href="#/overview" data-brand>Dashboard</a><span data-count-label></span></div>
+    <label class="search">
+      <span class="sr-only">Search</span>
+      <svg class="ico" aria-hidden="true"><use href="#i-search" /></svg>
+      <input type="search" placeholder="Search" autocomplete="off" spellcheck="false" data-search />
+      <kbd aria-hidden="true">/</kbd>
+    </label>
+    <div class="tabs" role="group" aria-label="Filter" data-tabs></div>
+  </div>
+  <nav class="rail-list" data-list aria-label="Item list">
+    <div class="skel"><i></i><i></i></div><div class="skel"><i></i><i></i></div><div class="skel"><i></i><i></i></div><div class="skel"><i></i><i></i></div><div class="skel"><i></i><i></i></div>
+  </nav>
+  <div class="rail-foot">
+    <span data-synced aria-live="polite">Loading</span>
+    <button class="btn" type="button" data-refresh><svg class="ico" aria-hidden="true"><use href="#i-refresh" /></svg>Refresh</button>
+  </div>
+</aside>
+
+<main class="sheet">
+  <div class="sheet-bar">
+    <div class="crumb">
+      <button class="btn back" type="button" data-back><svg class="ico" aria-hidden="true"><use href="#i-back" /></svg>All</button>
+      <span class="crumb" data-crumb></span>
+    </div>
+    <div class="bar-right">
+      <div class="theme" role="group" aria-label="Theme">
+        <button type="button" data-theme-value="system" aria-label="Match system theme" title="System"><svg class="ico" aria-hidden="true"><use href="#i-system" /></svg></button>
+        <button type="button" data-theme-value="light" aria-label="Light theme" title="Light"><svg class="ico" aria-hidden="true"><use href="#i-sun" /></svg></button>
+        <button type="button" data-theme-value="dark" aria-label="Dark theme" title="Dark"><svg class="ico" aria-hidden="true"><use href="#i-moon" /></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="band">
+    <canvas data-band-canvas aria-hidden="true"></canvas>
+    <h1 class="band-title" data-title>Dashboard</h1>
+  </div>
+  <div class="sheet-body" data-body></div>
+</main>
+<div class="tl-tip" data-tip aria-hidden="true"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<!-- ================= App ================= -->
+<script>
+(() => {
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  const DAY = 86400000;
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const ago = (iso) => {
+    if (!iso) return "never";
+    const s = (Date.now() - Date.parse(iso)) / 1000;
+    if (s < 60) return "just now";
+    if (s < 3600) return rtf.format(-Math.round(s / 60), "minute");
+    if (s < 86400) return rtf.format(-Math.round(s / 3600), "hour");
+    if (s < 86400 * 30) return rtf.format(-Math.round(s / 86400), "day");
+    if (s < 86400 * 365) return rtf.format(-Math.round(s / (86400 * 30)), "month");
+    return rtf.format(-Math.round(s / (86400 * 365)), "year");
+  };
+  const short = (iso) => {
+    if (!iso) return "";
+    const s = (Date.now() - Date.parse(iso)) / 1000;
+    if (s < 0) return "soon";
+    if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m`;
+    if (s < 86400) return `${Math.round(s / 3600)}h`;
+    if (s < 86400 * 14) return `${Math.round(s / 86400)}d`;
+    if (s < 86400 * 120) return `${Math.round(s / (86400 * 7))}w`;
+    return `${Math.round(s / (86400 * 30))}mo`;
+  };
+  const dateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const day = (iso) => (iso ? dateFmt.format(new Date(iso)) : "");
+  const icon = (id) => `<svg class="ico" aria-hidden="true"><use href="#i-${id}" /></svg>`;
+  const ageDays = (iso) => (iso ? (Date.now() - Date.parse(iso)) / DAY : Infinity);
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const nounOf = (n, pair) => (n === 1 ? pair[0] : pair[1]);
+
+  // "New since your last visit": remembered per browser, never required
+  const lastVisit = Number(store.get("glass-last-visit")) || 0;
+  addEventListener("pagehide", () => store.set("glass-last-visit", String(Date.now())));
+
+  const state = { data: null, filter: "all", query: "", route: null, detail: new Map(), window: store.get("glass-window") };
+  if (!["d", "w", "m", "y"].includes(state.window)) state.window = "m";
+  const list = $("[data-list]");
+  const body = $("[data-body]");
+  const crumb = $("[data-crumb]");
+  const title = $("[data-title]");
+
+  // ---------- Theme ----------
+  const themeBtns = [...document.querySelectorAll("[data-theme-value]")];
+  const applyTheme = (t) => {
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+    else delete document.documentElement.dataset.theme;
+    themeBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeValue === t)));
+    store.set("glass-theme", t);
+    dispatchEvent(new CustomEvent("glass:theme"));
+  };
+  themeBtns.forEach((b) => b.addEventListener("click", () => applyTheme(b.dataset.themeValue)));
+  applyTheme(store.get("glass-theme") || "system");
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => dispatchEvent(new CustomEvent("glass:theme")));
+
+  // ---------- Data ----------
+  const api = async (path) => {
+    const res = await fetch(path);
+    const json = await res.json().catch(() => ({ error: "bad-response", message: "The server sent something unexpected." }));
+    if (!res.ok) throw Object.assign(new Error(json.message || res.statusText), { code: json.error, hint: json.hint });
+    return json;
+  };
+  const markHtml = (m) => m.icon
+    ? `<span class="mark" title="${esc(m.title)}">${icon(m.icon)}<span class="sr-only">${esc(m.title || m.icon)}</span></span>`
+    : `<span class="mark mark--${m.tone}" title="${esc(m.title)}"><i></i>${esc(m.label)}</span>`;
+  const marks = (it) => [
+    ...(lastVisit && it.updatedAt && Date.parse(it.updatedAt) > lastVisit ? [`<span class="mark mark--new" title="Updated since your last visit"><i></i>new</span>`] : []),
+    ...it.marks.map(markHtml),
+  ].join("");
+  const visible = () => {
+    const q = state.query.trim().toLowerCase();
+    return state.data.items.filter((it) =>
+      (state.filter === "all" || it.badges.includes(state.filter)) &&
+      (!q || it.name.toLowerCase().includes(q) || it.description.toLowerCase().includes(q) || it.badges.some((b) => b.toLowerCase().includes(q))));
+  };
+
+  // ---------- Rail ----------
+  const renderTabs = () => {
+    // Filters come from the items' own badges (Public/Private for GitHub, your tags for JSON)
+    const counts = new Map();
+    state.data.items.forEach((it) => it.badges.forEach((b) => counts.set(b, (counts.get(b) || 0) + 1)));
+    const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    if (state.filter !== "all" && !counts.has(state.filter)) state.filter = "all";
+    $("[data-tabs]").innerHTML = [["all", "All", state.data.items.length], ...top.map(([b, n]) => [b, b, n])]
+      .map(([v, label, n]) => `<button type="button" data-filter="${esc(v)}" aria-pressed="${state.filter === v}">${esc(label)}<span class="count">${n}</span></button>`).join("");
+    document.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => { state.filter = b.dataset.filter; renderTabs(); renderRail(); }));
+  };
+  const renderRail = () => {
+    const items = visible();
+    const groups = [
+      ["Active", "this week", items.filter((it) => ageDays(it.updatedAt) <= 7)],
+      ["Quiet", "1–4 weeks", items.filter((it) => ageDays(it.updatedAt) > 7 && ageDays(it.updatedAt) <= 28)],
+      ["Stale", "4+ weeks", items.filter((it) => ageDays(it.updatedAt) > 28 && it.updatedAt)],
+      ["Undated", "no activity", items.filter((it) => !it.updatedAt)],
+    ];
+    const all = state.data.items;
+    $("[data-count-label]").textContent = `${all.length} ${nounOf(all.length, state.data.noun)}`;
+    const current = state.route?.type === "item" ? state.route.id : state.route?.type === "overview" ? "__overview" : null;
+    list.innerHTML = `
+      <a class="row row-overview" href="#/overview" ${current === "__overview" ? 'aria-current="page"' : ""}>
+        <span class="row-name">Overview</span><span class="row-ver">${pad2(all.length)}</span>
+        <span class="row-sub">${all.filter((it) => ageDays(it.updatedAt) <= 7).length} updated this week${state.data.errors.length ? ` · <span class="mark mark--fail"><i></i>${state.data.errors.length} source${state.data.errors.length > 1 ? "s" : ""} failed</span>` : ""}</span>
+      </a>
+      ${groups.filter((g) => g[2].length).map(([name, span, rs]) => `
+        <section class="group" aria-label="${name}">
+          <h2 class="label"><span>${name}</span><span>${span} · ${rs.length}</span></h2>
+          ${rs.map((it) => `
+            <a class="row" href="#/item/${encodeURIComponent(it.id)}" data-id="${esc(it.id)}" ${current === it.id ? 'aria-current="page"' : ""}>
+              <span class="row-name">${esc(it.name)}</span>
+              <span class="row-ver">${it.short ? esc(it.short) : "—"}</span>
+              <span class="row-sub"><span>${short(it.updatedAt)}</span>${marks(it)}</span>
+            </a>`).join("")}
+        </section>`).join("")}
+      ${items.length ? "" : `<p class="empty" style="margin:16px 24px">${state.query ? `Nothing matches “${esc(state.query)}”.` : "Nothing to show yet."}</p>`}`;
+  };
+
+  // ---------- Sheet parts ----------
+  const splitWords = (text) => esc(text).split(/(\s+)/).map((p) => (/^\s+$/.test(p) || !p ? p : `<span class="w">${p}</span>`)).join("");
+  const lightLede = () => {
+    const lede = $(".lede", body);
+    if (!lede) return;
+    [...lede.querySelectorAll(".w")].forEach((w, i) => (w.style.transitionDelay = `${Math.min(i * 28, 900)}ms`));
+    requestAnimationFrame(() => requestAnimationFrame(() => lede.classList.add("is-lit")));
+  };
+  const countUp = (root = body) => {
+    root.querySelectorAll("[data-count]").forEach((el) => {
+      const target = Number(el.dataset.count);
+      if (reducedMotion || !target) return;
+      const t0 = performance.now();
+      const tick = (now) => {
+        const k = Math.min(1, (now - t0) / 1200);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - k, 4))).toLocaleString("en-US");
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  };
+  const revealer = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("is-in"); revealer.unobserve(e.target); } }), { rootMargin: "0px 0px -6% 0px" });
+  const reveal = () => body.querySelectorAll(".rv:not(.is-in)").forEach((el) => revealer.observe(el));
+  const curtain = () => {
+    if (reducedMotion) return;
+    body.animate([{ clipPath: "inset(18% 0 0 0)", opacity: 0, translate: "0 28px" }, { clipPath: "inset(0 0 0 0)", opacity: 1, translate: "0 0" }], { duration: 700, easing: "cubic-bezier(.7,0,.2,1)" });
+  };
+
+  // Facts: a definition grid; absent values are said in words
+  const factsHtml = (facts) => !facts.length ? "" : `<dl class="facts rv">${facts.map((f) => {
+    let value = f.time ? esc(ago(f.time)) : esc(f.value);
+    if (f.count != null && !f.time) value = `<span data-count="${f.count}">${esc(f.value)}</span>`;
+    if (f.tone === "accent") value = `<span class="prism">${value}</span>`;
+    if (f.tone === "fail") value = `<span class="fail">${value}</span>`;
+    const note = f.note || (f.time ? day(f.time) : "");
+    return `<div><dt>${esc(f.label)}</dt><dd class="${f.absent ? "absent" : ""}">${value}${note ? `<small>${esc(note)}</small>` : ""}</dd></div>`;
+  }).join("")}</dl>`;
+
+  // Rows: key · title (note) · meta; rows with a link get the ink wipe
+  const rowMeta = (r) => [
+    r.strong || r.meta ? `${r.strong ? `<span class="add">${esc(r.strong)}</span>` : ""}${r.strong && r.meta ? " " : ""}${esc(r.meta)}` : "",
+    r.date ? day(r.date) : "",
+    r.time ? short(r.time) : "",
+  ].filter(Boolean).join(" · ");
+  const rowHtml = (r, hidden) => {
+    const key = r.tone === "fail" || r.tone === "accent" ? `<span class="mark mark--${r.tone}"><i></i>${esc(r.key)}</span>` : esc(r.key);
+    const inner = `<span class="k">${key}</span><span class="t">${esc(r.title)}${r.note ? ` <em>— ${esc(r.note)}</em>` : ""}</span><span class="r">${rowMeta(r)}</span>`;
+    return `<li ${hidden ? "hidden data-more" : ""}>${r.href ? `<a href="${esc(r.href)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="li">${inner}</div>`}</li>`;
+  };
+  let sectionSeq = 0;
+  const sectionHtml = (s) => {
+    const id = `s-${++sectionSeq}`;
+    const n = pad2(state.sectionNo++);
+    const limit = s.limit && s.rows.length > s.limit ? s.limit : 0;
+    const rows = s.rows.length
+      ? `<ul class="list">${s.rows.map((r, i) => rowHtml(r, limit && i >= limit)).join("")}</ul>${limit ? `<button class="btn more" type="button" data-more-btn>Show all ${s.rows.length}</button>` : ""}`
+      : `<p class="empty">${esc(s.empty)}</p>`;
+    return `<section class="block rv" aria-labelledby="${id}"><div class="block-head"><h2 class="label" id="${id}"><span>(${n})</span><span>${esc(s.title)}${s.total ? ` · ${esc(s.total)}` : ""}</span></h2></div>${rows}${s.footnote ? `<p class="note">${esc(s.footnote)}</p>` : ""}</section>`;
+  };
+  const sectionsHtml = (sections) => {
+    // Consecutive half-width sections pair up into two columns
+    let out = "", pair = [];
+    const flush = () => { if (pair.length) { out += `<div class="cols">${pair.join("")}</div>`; pair = []; } };
+    for (const s of sections) {
+      if (s.half) { pair.push(sectionHtml(s)); if (pair.length === 2) flush(); }
+      else { flush(); out += sectionHtml(s); }
+    }
+    flush();
+    return out;
+  };
+  const linksHtml = (links) => !links.length ? "" : `
+    <section class="block rv" aria-labelledby="links-h"><div class="block-head"><h2 class="label" id="links-h"><span>(${pad2(state.sectionNo++)})</span><span>Links</span></h2></div>
+    <div class="links">${links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener"><span><strong>${esc(l.label)}</strong><small>${esc(l.href.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</small></span>${icon("arrow")}</a>`).join("")}</div></section>`;
+  const wireMore = (root = body) => root.querySelectorAll("[data-more-btn]").forEach((btn) => btn.addEventListener("click", () => {
+    const rows = [...btn.previousElementSibling.querySelectorAll("[data-more]")];
+    rows.forEach((li) => (li.hidden = false));
+    btn.remove();
+    rows[0]?.querySelector("a")?.focus({ preventScroll: true });
+  }));
+
+  // ---------- Timeline: timestamps binned to the local clock ----------
+  const HOUR = 3600000;
+  const fmt = (o) => new Intl.DateTimeFormat("en-US", o);
+  const hourFmt = fmt({ hour: "2-digit", minute: "2-digit", hour12: false });
+  const dayFmt = fmt({ weekday: "short", month: "short", day: "numeric" });
+  const monthDayFmt = fmt({ month: "short", day: "numeric" });
+  const WINDOWS = {
+    d: { label: "1D", span: "24 hours", bins: 24, step: HOUR,
+      end: (t) => { const d = new Date(t); d.setMinutes(0, 0, 0); return d.getTime() + HOUR; },
+      tick: (d) => (d.getHours() % 6 === 0 ? hourFmt.format(d) : ""),
+      tip: (d) => `${monthDayFmt.format(d)}, ${hourFmt.format(d)}` },
+    w: { label: "1W", span: "7 days", bins: 28, step: 6 * HOUR,
+      end: (t) => { const d = new Date(t); d.setHours(Math.floor(d.getHours() / 6) * 6, 0, 0, 0); return d.getTime() + 6 * HOUR; },
+      tick: (d) => (d.getHours() === 0 ? d.toLocaleString("en-US", { weekday: "short" }) : ""),
+      tip: (d) => `${dayFmt.format(d)}, ${hourFmt.format(d)}–${hourFmt.format(new Date(d.getTime() + 6 * HOUR))}` },
+    m: { label: "1M", span: "30 days", bins: 30, step: DAY,
+      end: (t) => { const d = new Date(t); d.setHours(24, 0, 0, 0); return d.getTime(); },
+      tick: (d) => (d.getDay() === 1 ? monthDayFmt.format(d) : ""),
+      tip: (d) => dayFmt.format(d) },
+    y: { label: "1Y", span: "52 weeks", bins: 52, step: 7 * DAY,
+      end: (t) => t,
+      tick: (d, prev) => (!prev || d.getMonth() !== prev.getMonth() ? d.toLocaleString("en-US", { month: "short" }) : ""),
+      tip: (d) => `Week of ${dateFmt.format(d)}` },
+  };
+  const binDates = (dates, w) => {
+    const end = w.end(Date.now());
+    const start = end - w.bins * w.step;
+    const counts = new Array(w.bins).fill(0);
+    for (const iso of dates) {
+      const t = Date.parse(iso);
+      if (t >= start && t < end) counts[Math.floor((t - start) / w.step)]++;
+    }
+    return { counts, start };
+  };
+  const timeline = () => `
+    <section class="block rv" aria-labelledby="tl-h">
+      <div class="block-head">
+        <h2 class="tl-head" id="tl-h"><span class="idx">(${pad2(state.sectionNo++)})</span><span data-tl-sum>Activity</span></h2>
+        <div class="seg" role="group" aria-label="Time window">
+          ${Object.entries(WINDOWS).map(([k, w]) => `<button type="button" data-w="${k}" aria-pressed="${state.window === k}" aria-label="Last ${w.span}">${w.label}</button>`).join("")}
+        </div>
+      </div>
+      <div class="tl" data-tl role="img"></div>
+      <div class="tl-months" data-tl-ticks aria-hidden="true"></div>
+    </section>`;
+  const tip = $("[data-tip]");
+  const wireTimeline = (dates, noun, scope, animate) => {
+    const tl = $("[data-tl]", body);
+    if (!tl) return;
+    const sum = $("[data-tl-sum]", body);
+    const ticks = $("[data-tl-ticks]", body);
+    const apply = (grow) => {
+      const w = WINDOWS[state.window];
+      const { counts, start } = binDates(dates, w);
+      const max = Math.max(1, ...counts);
+      const total = counts.reduce((a, b) => a + b, 0);
+      tl.style.gridTemplateColumns = `repeat(${w.bins}, minmax(0, 1fr))`;
+      tl.setAttribute("aria-label", `${total} ${nounOf(total, noun)} in the last ${w.span}`);
+      tl.innerHTML = counts.map((c, i) => `<i class="${c ? "in" : ""}" style="height:${(c / max) * 100}%" data-c="${c}" data-t="${start + i * w.step}"></i>`).join("") + `<span class="tl-window" style="left:0;width:100%"></span>`;
+      const minGap = Math.ceil(w.bins / (innerWidth < 860 ? 5 : 16));
+      let lastAt = -minGap, prev = null;
+      ticks.innerHTML = counts.map((_, i) => {
+        const d = new Date(start + i * w.step);
+        const label = w.tick(d, prev);
+        prev = d;
+        if (!label || i - lastAt < minGap || i > w.bins - 2) return "";
+        lastAt = i;
+        return `<span style="left:${(i / w.bins) * 100}%">${label}</span>`;
+      }).join("");
+      sum.innerHTML = `<b>${total.toLocaleString("en-US")}</b> ${esc(nounOf(total, noun))}${scope} in the last ${w.span}`;
+      body.querySelectorAll("[data-w]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.w === state.window)));
+      if (grow && !reducedMotion) tl.querySelectorAll("i").forEach((b, i) => b.animate([{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }], { duration: 650, delay: 120 + i * (420 / w.bins), easing: "cubic-bezier(.7,0,.2,1)", fill: "backwards" }));
+    };
+    body.querySelectorAll("[data-w]").forEach((b) => b.addEventListener("click", () => {
+      if (b.dataset.w === state.window) return;
+      state.window = b.dataset.w;
+      store.set("glass-window", state.window);
+      apply(true);
+    }));
+    apply(animate);
+    tl.addEventListener("pointermove", (e) => {
+      const b = e.target.closest("i");
+      if (!b) { tip.style.opacity = 0; return; }
+      const c = Number(b.dataset.c);
+      tip.textContent = `${WINDOWS[state.window].tip(new Date(Number(b.dataset.t)))} · ${c} ${nounOf(c, noun)}`;
+      tip.style.translate = `${Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8)}px ${e.clientY - 38}px`;
+      tip.style.opacity = 1;
+    });
+    tl.addEventListener("pointerleave", () => (tip.style.opacity = 0));
+  };
+
+  const setTitle = (text, crumbHtml) => {
+    const changed = title.textContent !== text;
+    title.textContent = text;
+    crumb.innerHTML = crumbHtml;
+    document.title = text === state.data?.title ? text : `${text} · ${state.data?.title || ""}`;
+    if (changed) dispatchEvent(new CustomEvent("glass:title", { detail: text }));
+  };
+
+  // ---------- Overview ----------
+  const renderOverview = (animate) => {
+    const { items, noun, overview, errors } = state.data;
+    const week = items.filter((it) => ageDays(it.updatedAt) <= 7);
+    const nouns = new Set(items.map((it) => it.activityNoun.join("|")));
+    const actNoun = nouns.size === 1 ? items[0].activityNoun : ["update", "updates"];
+    const allDates = items.flatMap((it) => it.activity);
+    const yearCount = allDates.filter((d) => ageDays(d) <= 364).length;
+    const attn = items.flatMap((it) => it.attention.map((a) => ({ it, ...a })));
+    const lede = `${items.length} ${nounOf(items.length, noun)}, ${week.length} updated this week.${overview.sentence ? ` ${overview.sentence}` : ""}`;
+    state.sectionNo = 1;
+    setTitle(state.data.title, `<span>${esc(state.data.title)}</span><span class="muted">/ overview</span>`);
+    body.innerHTML = `
+      ${errors.length ? `<div class="notice notice--inline rv">${errors.map((e) => `<p><b>${esc(e.source)} didn't load.</b> ${esc(e.message)}${e.hint ? ` ${esc(e.hint)}` : ""}</p>`).join("")}</div>` : ""}
+      <p class="lede">${splitWords(lede)}</p>
+      <div class="stats rv">
+        <div><b data-count="${items.length}">${items.length}</b><span>${esc(cap(noun[1]))}</span></div>
+        <div><b data-count="${week.length}">${week.length}</b><span>Updated this week</span></div>
+        <div><b data-count="${yearCount}">${yearCount.toLocaleString("en-US")}</b><span>${esc(cap(actNoun[1]))} in 52 weeks</span></div>
+        ${overview.stats.map((s) => `<div><b data-count="${s.value}">${s.value.toLocaleString("en-US")}</b><span>${esc(s.label)}</span></div>`).join("")}
+      </div>
+      ${timeline()}
+      <section class="block rv attn" aria-labelledby="attn-h">
+        <div class="block-head"><h2 class="label" id="attn-h"><span>(${pad2(state.sectionNo++)})</span><span>Needs attention · ${attn.length}</span></h2></div>
+        ${attn.length ? `<ul class="list">${attn.map((a) => `
+          <li><a href="#/item/${encodeURIComponent(a.it.id)}">
+            <span class="k">${a.tone ? `<span class="mark mark--${a.tone}"><i></i>${esc(a.label)}</span>` : esc(a.label)}</span>
+            <span class="t">${esc(a.it.name)}${a.text ? ` <em>— ${esc(a.text)}</em>` : ""}</span>
+            <span class="r">${short(a.it.updatedAt)}</span></a></li>`).join("")}</ul>`
+          : `<p class="empty">Nothing needs you right now.</p>`}
+      </section>
+      ${sectionsHtml(overview.sections)}`;
+    wireTimeline(allDates, actNoun, nouns.size === 1 ? ` across all ${noun[1]}` : "", animate);
+    wireMore();
+  };
+
+  // ---------- Item ----------
+  const renderItem = (it, animate) => {
+    const d = state.detail.get(it.id);
+    state.sectionNo = 1;
+    setTitle(it.name, `${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">` : "<span>"}<span class="owner">${esc(it.source)} / </span><b>${esc(it.name)}</b>${it.url ? "</a>" : "</span>"}${it.badges.map((b) => `<span class="pill">${esc(b)}</span>`).join("")}`);
+    body.innerHTML = `
+      <p class="lede">${it.description ? splitWords(it.description) : `<span class="none">${splitWords("No description.")}</span>`}</p>
+      ${factsHtml(it.facts)}
+      ${it.activity.length ? timeline() : ""}
+      ${sectionsHtml(it.sections)}
+      <div data-detail data-start="${state.sectionNo}">${it.hasDetail ? detailHtml(it, d) : ""}</div>
+      <div data-links>${it.hasDetail && !d ? "" : linksHtml(it.links)}</div>`;
+    if (it.activity.length) wireTimeline(d?.activity || it.activity, it.activityNoun, "", animate);
+    wireMore();
+    wireDetail(it);
+    if (it.hasDetail && !d) loadDetail(it);
+  };
+  const detailHtml = (it, d) => {
+    if (!d) return `<section class="block" aria-busy="true"><div class="skel" style="padding:0"><i></i><i></i></div><div class="skel" style="padding:14px 0"><i></i><i></i></div><div class="skel" style="padding:0"><i></i><i></i></div></section>`;
+    if (d.error) return `<section class="block notice"><h2>Couldn't load details</h2><p>${esc(d.error)}</p><button class="btn" type="button" data-retry-detail>${icon("refresh")}Try again</button></section>`;
+    return sectionsHtml(d.sections);
+  };
+  const wireDetail = (it) => {
+    const retry = $("[data-retry-detail]", body);
+    if (retry) retry.addEventListener("click", () => { state.detail.delete(it.id); renderItem(it, false); });
+  };
+  const loadDetail = async (it) => {
+    try { state.detail.set(it.id, await api(`/api/items/${encodeURIComponent(it.id)}`)); }
+    catch (e) { state.detail.set(it.id, { error: e.message }); }
+    if (state.route?.type === "item" && state.route.id === it.id) {
+      const slot = $("[data-detail]", body);
+      if (!slot) return;
+      // Detail arrives later: number its sections from where the page left off when it rendered
+      state.sectionNo = Number(slot.dataset.start) || 2;
+      slot.innerHTML = detailHtml(it, state.detail.get(it.id));
+      $("[data-links]", body).innerHTML = linksHtml(it.links);
+      wireMore(slot);
+      wireDetail(it);
+      reveal();
+    }
+  };
+
+  // ---------- Errors ----------
+  const renderError = (e) => {
+    setTitle("Offline", `<span>Dashboard</span>`);
+    const hint = e.code ? `${esc(e.message)}${e.hint ? ` ${esc(e.hint)}` : ""}` : `The dashboard server isn't answering. Start it with <code>node server.mjs</code> in this folder.`;
+    body.innerHTML = `<div class="notice"><h2>Can't load the dashboard</h2><p>${hint}</p><button class="btn" type="button" data-retry>${icon("refresh")}Try again</button></div>`;
+    $("[data-retry]", body).addEventListener("click", () => load(true));
+    list.innerHTML = `<p class="empty" style="margin:16px 24px">Nothing loaded.</p>`;
+    $("[data-synced]").textContent = "Not synced";
+    document.body.classList.add("show-sheet");
+  };
+
+  // ---------- Routing ----------
+  const parse = () => {
+    const m = location.hash.match(/^#\/item\/(.+)$/);
+    if (m) return { type: "item", id: decodeURIComponent(m[1]) };
+    if (location.hash === "#/overview") return { type: "overview" };
+    return null;
+  };
+  const route = (animate = true) => {
+    if (!state.data) return;
+    let r = parse();
+    const narrow = matchMedia("(max-width: 860px)").matches;
+    if (!r && !narrow) r = { type: "overview" };
+    document.body.classList.toggle("show-sheet", Boolean(parse()));
+    const same = Boolean(state.route && r && state.route.type === r.type && state.route.id === r.id);
+    state.route = r;
+    renderRail();
+    if (!r) return;
+    const it = r.type === "item" ? state.data.items.find((x) => x.id === r.id) : null;
+    if (r.type === "item" && !it) { location.replace("#/overview"); return; }
+    const fresh = animate && !same;
+    if (it) renderItem(it, fresh); else renderOverview(fresh);
+    if (fresh) { curtain(); scrollTo({ top: 0, behavior: "instant" }); lightLede(); countUp(); }
+    else $(".lede", body)?.classList.add("is-lit");
+    reveal();
+  };
+  addEventListener("hashchange", () => route());
+  $("[data-back]").addEventListener("click", () => { history.pushState(null, "", location.pathname); route(); scrollTo({ top: 0 }); });
+  addEventListener("popstate", () => route());
+
+  // ---------- Load / refresh ----------
+  const synced = $("[data-synced]");
+  const refreshBtn = $("[data-refresh]");
+  let syncedAt = null;
+  const tickSynced = () => { if (syncedAt) synced.textContent = `Synced ${ago(syncedAt)}`; };
+  setInterval(tickSynced, 30000);
+  const load = async (refresh = false) => {
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add("is-busy");
+    synced.textContent = refresh ? "Syncing" : "Loading";
+    try {
+      state.data = await api(`/api/dashboard${refresh ? "?refresh" : ""}`);
+      if (refresh) state.detail.clear();
+      $("[data-brand]").textContent = state.data.title;
+      syncedAt = state.data.fetchedAt;
+      tickSynced();
+      renderTabs();
+      route(!refresh);
+    } catch (e) {
+      renderError(e);
+    } finally {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove("is-busy");
+    }
+  };
+  refreshBtn.addEventListener("click", () => load(true));
+
+  // ---------- Search and keys ----------
+  const search = $("[data-search]");
+  search.addEventListener("input", () => { state.query = search.value; if (state.data) renderRail(); });
+  addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea")) {
+      if (e.key === "Escape") { search.value = ""; state.query = ""; if (state.data) renderRail(); search.blur(); }
+      if (e.key === "Enter") { const first = list.querySelector(".row[data-id]"); if (first) location.hash = first.getAttribute("href"); }
+      return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "/") { e.preventDefault(); search.focus(); return; }
+    if (e.key === "j" || e.key === "k") {
+      const rows = [...list.querySelectorAll(".row")];
+      const i = rows.findIndex((x) => x.getAttribute("aria-current") === "page");
+      const next = rows[Math.max(0, Math.min(rows.length - 1, i + (e.key === "j" ? 1 : -1)))];
+      if (next) { location.hash = next.getAttribute("href"); next.scrollIntoView({ block: "nearest" }); }
+    }
+  });
+
+  load();
+})();
+</script>
+
+<!-- ================= Band: the glass knot refracts the selected name ================= -->
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const canvas = document.querySelector("[data-band-canvas]");
+const band = canvas.parentElement;
+const titleEl = document.querySelector("[data-title]");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const CAMERA_Z = 5, KNOT_Z = 2.2;
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+} catch {
+  throw new Error("WebGL unavailable"); // the HTML title stays visible
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+const colors = () => {
+  const cs = getComputedStyle(document.documentElement);
+  return { bg: cs.getPropertyValue("--bg").trim() || "#e9e9e7", fg: cs.getPropertyValue("--fg").trim() || "#111" };
+};
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.z = CAMERA_Z;
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const textCanvas = document.createElement("canvas");
+const ctx = textCanvas.getContext("2d");
+let textTexture = null;
+// Opaque on purpose: transmission only refracts opaque objects, so the name must be one
+const plane = new THREE.Mesh(
+  new THREE.PlaneGeometry(1, 1),
+  new THREE.ShaderMaterial({
+    uniforms: { map: { value: null }, paper: { value: new THREE.Color() }, fade: { value: 0 } },
+    vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: "uniform sampler2D map; uniform vec3 paper; uniform float fade; varying vec2 vUv;\nvoid main() { vec4 t = texture2D(map, vUv); gl_FragColor = vec4(mix(t.rgb, paper, fade), 1.0);\n#include <colorspace_fragment>\n}",
+    toneMapped: false
+  })
+);
+scene.add(plane);
+
+const knot = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1, 0.3, 300, 48, 2, 3),
+  new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0, transmission: 1, thickness: 0.7, ior: 1.45, dispersion: 4, envMapIntensity: 1, toneMapped: false })
+);
+knot.position.z = KNOT_Z;
+scene.add(knot);
+
+let W = 1, H = 1, visW = 1, visH = 1, knotBase = 1, word = titleEl.textContent;
+
+function drawText() {
+  const { bg, fg } = colors();
+  const dpr = Math.min(devicePixelRatio, 2);
+  textCanvas.width = Math.round(W * dpr);
+  textCanvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = fg;
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  const text = word.toUpperCase();
+  const base = 100;
+  ctx.font = `900 ${base}px "Inter Tight", sans-serif`;
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${-0.045 * base}px`;
+  const padX = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pad")) || 40;
+  const avail = W - padX * 2;
+  // One line fills the band's width, never taller than 64% of it
+  let lines = [text];
+  let size = Math.min((base * avail) / ctx.measureText(text).width, H * 0.64);
+  // A long name that would shrink too far breaks at the separator nearest its middle
+  const cuts = [...text.matchAll(/[-_. ]/g)].map((m) => m.index);
+  if (size < H * 0.34 && cuts.length) {
+    const mid = text.length / 2;
+    const at = cuts.reduce((a, b) => (Math.abs(b - mid) < Math.abs(a - mid) ? b : a));
+    const two = [text.slice(0, at + 1), text.slice(at + 1)];
+    const wide = Math.max(...two.map((l) => ctx.measureText(l).width));
+    const size2 = Math.min((base * avail) / wide, (H * 0.78) / (2 * 0.86));
+    if (size2 > size * 1.15) { lines = two; size = size2; }
+  }
+  ctx.font = `900 ${size}px "Inter Tight", sans-serif`;
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${-0.045 * size}px`;
+  const lead = size * 0.86;
+  const top = H * 0.5 - (lead * (lines.length - 1)) / 2 + size * 0.36;
+  lines.forEach((l, i) => ctx.fillText(l, padX, top + i * lead));
+  if (textTexture) textTexture.dispose();
+  textTexture = new THREE.CanvasTexture(textCanvas);
+  textTexture.colorSpace = THREE.SRGBColorSpace;
+  textTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  plane.material.uniforms.map.value = textTexture;
+  plane.material.uniforms.paper.value.set(bg);
+  scene.background = new THREE.Color(bg);
+}
+
+function resize() {
+  const r = band.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  renderer.setSize(W, H, false);
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+  visH = 2 * CAMERA_Z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  visW = visH * camera.aspect;
+  plane.scale.set(visW, visH, 1);
+  // Perspective magnifies the knot ~1.8x at KNOT_Z, so this keeps it inside the band at every rotation;
+  // narrow bands get a smaller knot so the name stays legible
+  knotBase = Math.min(visH * 0.125, visW * 0.06);
+  knot.scale.setScalar(knotBase);
+  knot.position.x = visW * 0.2 * ((CAMERA_Z - KNOT_Z) / CAMERA_Z);
+  drawText();
+}
+
+const pointer = new THREE.Vector2(), tilt = new THREE.Vector2();
+addEventListener("pointermove", (e) => {
+  pointer.x = (e.clientX / innerWidth) * 2 - 1;
+  pointer.y = (e.clientY / innerHeight) * 2 - 1;
+}, { passive: true });
+
+// A change of subject spins the knot once and fades the new name up through the glass
+let swap = 1, spin = 0;
+const clock = new THREE.Clock();
+function render() {
+  const t = clock.getElapsedTime();
+  if (!reducedMotion) {
+    tilt.lerp(pointer, 0.06);
+    swap = Math.min(1, swap + 0.022);
+    const e = 1 - Math.pow(1 - swap, 3);
+    spin += (1 - e) * 0.12;
+    knot.rotation.x = t * 0.3 + tilt.y * 0.35 + spin;
+    knot.rotation.y = t * 0.42 + tilt.x * 0.45 + spin * 1.4;
+    plane.material.uniforms.fade.value = (1 - e) * 0.9;
+    const s = Math.min(1, scrollY / (H || 1));
+    knot.scale.setScalar(knotBase * (1 + s * 0.1));
+  } else {
+    knot.rotation.set(0.6, 0.4, 0);
+    plane.material.uniforms.fade.value = 0;
+  }
+  renderer.render(scene, camera);
+}
+
+let running = false, inView = true, ready = false;
+const setRunning = () => {
+  const on = ready && inView && !document.hidden;
+  if (on === running) return;
+  running = on;
+  renderer.setAnimationLoop(on && !reducedMotion ? render : null);
+  if (on && reducedMotion) render();
+};
+new IntersectionObserver(([e]) => { inView = e.isIntersecting; setRunning(); }).observe(band);
+document.addEventListener("visibilitychange", setRunning);
+
+addEventListener("glass:title", (e) => {
+  word = e.detail;
+  if (!ready) return;
+  drawText();
+  swap = 0;
+  if (reducedMotion || !running) render();
+});
+addEventListener("glass:theme", () => { if (!ready) return; requestAnimationFrame(() => { drawText(); if (reducedMotion || !running) render(); }); });
+new ResizeObserver(() => { if (!ready) return; resize(); if (reducedMotion || !running) render(); }).observe(band);
+
+Promise.race([document.fonts.load('900 100px "Inter Tight"'), new Promise((r) => setTimeout(r, 2500))]).then(() => {
+  word = titleEl.textContent;
+  ready = true;
+  resize();
+  document.documentElement.classList.add("gl-ready");
+  setRunning();
+  render();
+});
+</script>
+</body>
+</html>

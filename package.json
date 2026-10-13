@@ -1,0 +1,13 @@
+{
+  "name": "glass-dashboard",
+  "version": "1.0.0",
+  "description": "A local dashboard for whatever you track, with pluggable data adapters. No dependencies.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  }
+}

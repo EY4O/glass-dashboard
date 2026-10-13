@@ -1,0 +1,727 @@
+{
+  "overview": {
+    "sentence": "Items tagged Work, Client, Personal, Study and Home are sample data from examples/sample.json; point the config at your own file, or at GitHub.",
+    "stats": [
+      {
+        "label": "Tasks due this week",
+        "value": 4
+      }
+    ],
+    "sections": [
+      {
+        "title": "Coming up",
+        "rows": [
+          {
+            "key": "Mon",
+            "title": "Pricing page copy",
+            "note": "Website relaunch"
+          },
+          {
+            "key": "Thu",
+            "title": "Redirect map",
+            "note": "Website relaunch"
+          },
+          {
+            "key": "Sun",
+            "title": "30 km long run",
+            "note": "Marathon training"
+          },
+          {
+            "key": "Dec 12",
+            "title": "Thesis draft to supervisor",
+            "note": "Thesis"
+          }
+        ]
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "website-relaunch",
+      "name": "Website relaunch",
+      "description": "New marketing site for the studio: content model, design system and a staged move off the old CMS.",
+      "url": "https://example.com",
+      "updatedAt": "-3h",
+      "short": "Build",
+      "tags": [
+        "Work",
+        "Client"
+      ],
+      "marks": [
+        {
+          "tone": "accent",
+          "label": "4",
+          "title": "Tasks due this week"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Phase",
+          "value": "Build",
+          "note": "after Design, before Launch"
+        },
+        {
+          "label": "Launch",
+          "value": "Nov 18",
+          "note": "5 weeks out"
+        },
+        {
+          "label": "Tasks due",
+          "value": "4",
+          "count": 4,
+          "note": "this week",
+          "tone": "accent"
+        },
+        {
+          "label": "Last update",
+          "time": "-3h"
+        },
+        {
+          "label": "Budget used",
+          "value": "62%",
+          "note": "of the build phase"
+        },
+        {
+          "label": "Pages",
+          "value": "18 · 31",
+          "note": "done · planned"
+        },
+        {
+          "label": "Blockers",
+          "value": "None",
+          "absent": true
+        },
+        {
+          "label": "Owner",
+          "value": "You",
+          "note": "with two contractors"
+        }
+      ],
+      "activity": [
+        "-2h",
+        "-24h",
+        "-25h",
+        "-27h",
+        "-76h",
+        "-104h",
+        "-116h",
+        "-144h",
+        "-163h",
+        "-188h",
+        "-198h",
+        "-234h",
+        "-247h",
+        "-254h",
+        "-261h",
+        "-264h",
+        "-304h",
+        "-308h",
+        "-308h",
+        "-312h",
+        "-323h",
+        "-350h",
+        "-352h",
+        "-361h",
+        "-364h",
+        "-407h",
+        "-430h",
+        "-433h",
+        "-440h",
+        "-497h",
+        "-559h",
+        "-566h",
+        "-568h",
+        "-595h",
+        "-596h",
+        "-612h",
+        "-635h",
+        "-640h",
+        "-668h",
+        "-728h",
+        "-764h",
+        "-777h",
+        "-812h",
+        "-846h",
+        "-847h",
+        "-854h",
+        "-871h",
+        "-888h",
+        "-926h",
+        "-926h",
+        "-966h",
+        "-972h",
+        "-1067h",
+        "-1085h",
+        "-1123h",
+        "-1200h",
+        "-1259h",
+        "-1260h",
+        "-1266h",
+        "-1283h",
+        "-1286h",
+        "-1288h",
+        "-1290h",
+        "-1315h"
+      ],
+      "activityNoun": [
+        "task closed",
+        "tasks closed"
+      ],
+      "attention": [
+        {
+          "label": "4 due this week",
+          "tone": "accent",
+          "text": "Pricing page copy, CMS export, redirects, analytics"
+        }
+      ],
+      "links": [
+        {
+          "label": "Staging site",
+          "href": "https://example.com"
+        },
+        {
+          "label": "Design file",
+          "href": "https://example.com/design"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Milestones",
+          "half": true,
+          "rows": [
+            {
+              "key": "Done",
+              "title": "Content model signed off",
+              "date": "-21d"
+            },
+            {
+              "key": "Done",
+              "title": "Design system v1",
+              "date": "-9d"
+            },
+            {
+              "key": "Next",
+              "title": "CMS migration dry run",
+              "date": "-0h",
+              "tone": "accent"
+            },
+            {
+              "key": "Later",
+              "title": "Launch and redirects",
+              "note": "Nov 18"
+            }
+          ]
+        },
+        {
+          "title": "Due this week",
+          "half": true,
+          "rows": [
+            {
+              "key": "Mon",
+              "title": "Pricing page copy"
+            },
+            {
+              "key": "Tue",
+              "title": "Export old CMS entries"
+            },
+            {
+              "key": "Thu",
+              "title": "Redirect map"
+            },
+            {
+              "key": "Fri",
+              "title": "Analytics events"
+            }
+          ]
+        },
+        {
+          "title": "Recent updates",
+          "limit": 4,
+          "rows": [
+            {
+              "key": "Task",
+              "title": "Header and footer built from the design system",
+              "time": "-3h"
+            },
+            {
+              "key": "Task",
+              "title": "Blog index with filters",
+              "time": "-9h"
+            },
+            {
+              "key": "Note",
+              "title": "Client approved the new navigation labels",
+              "time": "-1d"
+            },
+            {
+              "key": "Task",
+              "title": "Image pipeline: AVIF with WebP fallback",
+              "time": "-2d"
+            },
+            {
+              "key": "Task",
+              "title": "Case study template",
+              "time": "-3d"
+            },
+            {
+              "key": "Task",
+              "title": "Contact form with spam protection",
+              "time": "-4d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marathon",
+      "name": "Marathon training",
+      "description": "Sixteen-week plan for the spring marathon: four runs a week, long run on Sundays.",
+      "updatedAt": "-14h",
+      "short": "Wk 11",
+      "tags": [
+        "Personal"
+      ],
+      "facts": [
+        {
+          "label": "Week",
+          "value": "11 of 16",
+          "note": "build phase"
+        },
+        {
+          "label": "This week",
+          "value": "42 km",
+          "note": "of 48 planned"
+        },
+        {
+          "label": "Long run",
+          "value": "28 km",
+          "note": "Sunday, 2:41"
+        },
+        {
+          "label": "Last run",
+          "time": "-14h"
+        },
+        {
+          "label": "Race day",
+          "value": "35 days",
+          "note": "Sunday morning"
+        },
+        {
+          "label": "Easy pace",
+          "value": "5:35/km",
+          "note": "down from 5:52"
+        },
+        {
+          "label": "Missed runs",
+          "value": "2",
+          "count": 2,
+          "note": "this block"
+        },
+        {
+          "label": "Shoes",
+          "value": "412 km",
+          "note": "replace at 600"
+        }
+      ],
+      "activity": [
+        "-10h",
+        "-12h",
+        "-109h",
+        "-111h",
+        "-112h",
+        "-165h",
+        "-209h",
+        "-220h",
+        "-235h",
+        "-349h",
+        "-369h",
+        "-399h",
+        "-404h",
+        "-447h",
+        "-547h",
+        "-583h",
+        "-659h",
+        "-668h",
+        "-687h",
+        "-781h",
+        "-782h",
+        "-872h",
+        "-893h",
+        "-1028h",
+        "-1040h",
+        "-1086h",
+        "-1116h",
+        "-1120h",
+        "-1122h",
+        "-1227h",
+        "-1264h",
+        "-1369h",
+        "-1435h",
+        "-1484h",
+        "-1572h",
+        "-1601h",
+        "-1615h",
+        "-1616h",
+        "-1627h",
+        "-1659h",
+        "-1661h",
+        "-1690h",
+        "-1726h",
+        "-1840h"
+      ],
+      "activityNoun": [
+        "run",
+        "runs"
+      ],
+      "links": [
+        {
+          "label": "Training plan",
+          "href": "https://example.com/plan"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Recent runs",
+          "rows": [
+            {
+              "key": "Easy",
+              "title": "8 km at 5:31/km",
+              "time": "-14h"
+            },
+            {
+              "key": "Tempo",
+              "title": "10 km with 6 at race pace",
+              "time": "-2d"
+            },
+            {
+              "key": "Long",
+              "title": "28 km at 5:45/km",
+              "time": "-4d"
+            },
+            {
+              "key": "Easy",
+              "title": "7 km recovery",
+              "time": "-5d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home-lab",
+      "name": "Home lab",
+      "description": "The box under the desk: backups, media, a password manager and a few small services.",
+      "updatedAt": "-40m",
+      "short": "6/7 up",
+      "tags": [
+        "Personal"
+      ],
+      "marks": [
+        {
+          "tone": "fail",
+          "label": "1",
+          "title": "Services down"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Services",
+          "value": "6 of 7 up",
+          "tone": "fail",
+          "note": "photo backup is down"
+        },
+        {
+          "label": "Last check",
+          "time": "-40m"
+        },
+        {
+          "label": "Disk",
+          "value": "71%",
+          "note": "of 4 TB"
+        },
+        {
+          "label": "Last backup",
+          "value": "Yesterday",
+          "note": "03:00, verified"
+        }
+      ],
+      "activity": [
+        "-2h",
+        "-7h",
+        "-12h",
+        "-21h",
+        "-56h",
+        "-97h",
+        "-110h",
+        "-119h",
+        "-127h",
+        "-129h",
+        "-147h",
+        "-221h",
+        "-305h",
+        "-305h",
+        "-312h",
+        "-362h",
+        "-363h",
+        "-419h",
+        "-453h",
+        "-459h",
+        "-470h",
+        "-481h",
+        "-503h",
+        "-526h",
+        "-619h",
+        "-630h",
+        "-635h",
+        "-645h",
+        "-653h",
+        "-693h"
+      ],
+      "activityNoun": [
+        "event",
+        "events"
+      ],
+      "attention": [
+        {
+          "label": "Service down",
+          "tone": "fail",
+          "text": "Photo backup stopped after the last update"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Services",
+          "rows": [
+            {
+              "key": "Down",
+              "title": "Photo backup",
+              "note": "stopped after update",
+              "time": "-40m",
+              "tone": "fail"
+            },
+            {
+              "key": "Up",
+              "title": "Password manager",
+              "time": "-40m"
+            },
+            {
+              "key": "Up",
+              "title": "Media server",
+              "time": "-40m"
+            },
+            {
+              "key": "Up",
+              "title": "DNS filter",
+              "time": "-40m"
+            },
+            {
+              "key": "Up",
+              "title": "Nightly backups",
+              "time": "-40m"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thesis",
+      "name": "Thesis",
+      "description": "Master's thesis on urban heat islands: five chapters, draft due to the supervisor in December.",
+      "updatedAt": "-2d",
+      "short": "Ch. 3",
+      "tags": [
+        "Study"
+      ],
+      "facts": [
+        {
+          "label": "Chapter",
+          "value": "3 of 5",
+          "note": "Methods"
+        },
+        {
+          "label": "Words",
+          "value": "18,240",
+          "count": 18240,
+          "note": "target 30,000"
+        },
+        {
+          "label": "Last edit",
+          "time": "-2d"
+        },
+        {
+          "label": "Draft due",
+          "value": "Dec 12",
+          "note": "to supervisor"
+        }
+      ],
+      "activity": [
+        "-30h",
+        "-123h",
+        "-153h",
+        "-161h",
+        "-264h",
+        "-266h",
+        "-328h",
+        "-353h",
+        "-475h",
+        "-521h",
+        "-555h",
+        "-653h",
+        "-667h",
+        "-698h",
+        "-705h",
+        "-871h",
+        "-1010h",
+        "-1014h",
+        "-1164h",
+        "-1191h",
+        "-1222h",
+        "-1328h",
+        "-1422h",
+        "-1429h",
+        "-1447h",
+        "-1525h",
+        "-1779h",
+        "-1808h",
+        "-1835h",
+        "-1838h",
+        "-1848h",
+        "-1865h",
+        "-1934h",
+        "-1935h",
+        "-2033h",
+        "-2119h",
+        "-2140h",
+        "-2144h"
+      ],
+      "activityNoun": [
+        "writing session",
+        "writing sessions"
+      ],
+      "sections": [
+        {
+          "title": "Chapters",
+          "rows": [
+            {
+              "key": "Done",
+              "title": "1 · Introduction",
+              "note": "3,900 words"
+            },
+            {
+              "key": "Done",
+              "title": "2 · Literature review",
+              "note": "8,100 words"
+            },
+            {
+              "key": "Writing",
+              "title": "3 · Methods",
+              "note": "6,240 words",
+              "tone": "accent"
+            },
+            {
+              "key": "To do",
+              "title": "4 · Results"
+            },
+            {
+              "key": "To do",
+              "title": "5 · Discussion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen renovation",
+      "description": "Cabinets, worktop and lighting. Quotes are in; waiting on the electrician's date.",
+      "updatedAt": "-12d",
+      "short": "Quotes",
+      "tags": [
+        "Home"
+      ],
+      "facts": [
+        {
+          "label": "Stage",
+          "value": "Quotes",
+          "note": "3 of 3 received"
+        },
+        {
+          "label": "Last update",
+          "time": "-12d"
+        },
+        {
+          "label": "Budget",
+          "value": "€14,500",
+          "note": "lowest quote €12,900"
+        },
+        {
+          "label": "Start",
+          "value": "Not booked",
+          "absent": true
+        }
+      ],
+      "activity": [
+        "-280h",
+        "-280h",
+        "-429h",
+        "-463h",
+        "-501h",
+        "-539h",
+        "-636h",
+        "-741h",
+        "-908h"
+      ],
+      "activityNoun": [
+        "update",
+        "updates"
+      ],
+      "attention": [
+        {
+          "label": "Waiting 12 days",
+          "text": "Electrician hasn't confirmed a date"
+        }
+      ]
+    },
+    {
+      "id": "reading",
+      "name": "Reading list",
+      "description": "Books for the year. Nothing logged since the summer.",
+      "updatedAt": "-9w",
+      "short": "14/24",
+      "tags": [
+        "Personal"
+      ],
+      "facts": [
+        {
+          "label": "Read",
+          "value": "14 of 24",
+          "note": "this year"
+        },
+        {
+          "label": "Last logged",
+          "time": "-9w"
+        }
+      ],
+      "activity": [
+        "-1500h",
+        "-1500h",
+        "-1712h",
+        "-1961h",
+        "-2370h",
+        "-2428h",
+        "-2888h",
+        "-3363h",
+        "-3905h",
+        "-4147h",
+        "-4951h",
+        "-5377h",
+        "-5563h",
+        "-5605h"
+      ],
+      "activityNoun": [
+        "book",
+        "books"
+      ]
+    }
+  ]
+}

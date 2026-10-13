@@ -1,0 +1,9 @@
+{
+  "title": "Glass Dashboard",
+  "noun": ["project", "projects"],
+  "port": 4400,
+  "cacheMinutes": 5,
+  "sources": [
+    { "adapter": "json", "label": "Sample data", "options": { "file": "examples/sample.json" } }
+  ]
+}

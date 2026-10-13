@@ -1,0 +1,10 @@
+{
+  "title": "Everything",
+  "noun": ["item", "items"],
+  "port": 4400,
+  "cacheMinutes": 5,
+  "sources": [
+    { "adapter": "github", "label": "GitHub", "options": { "user": "@me", "includeForks": false } },
+    { "adapter": "json", "label": "Life admin", "options": { "file": "sample.json" } }
+  ]
+}
