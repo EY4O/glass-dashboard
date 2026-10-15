@@ -10,7 +10,7 @@
   <a href="https://ko-fi.com/looneth"><img src="https://img.shields.io/badge/Ko--fi-Support-FF813F?logo=ko-fi&logoColor=white" alt="Support on Ko-fi"></a>
 </p>
 
-Glass Dashboard is a template for building your own dashboard: your GitHub repos, a client project, a training plan, a home lab, or all of them at once. Every item gets a rail entry and a full page with its facts, an activity chart and its lists and links, while an overview sums up what moved and what needs you. Data comes from small **adapters**: GitHub and hand-written JSON ship ready, and a new source is one short file. It's a single Node script with no dependencies that serves the page on `localhost`.
+Glass Dashboard is a template for building your own dashboard: your GitHub repos, a client project, a training plan, a home lab, or all of them at once. Every item gets a rail entry and a full page with its facts, an activity chart and its lists and links, while an overview sums up what moved and what needs you. Data comes from small **adapters**: GitHub, the git clones on your computer and hand-written JSON ship ready, and a new source is one short file. It's a single Node script with no dependencies that serves the page on `localhost`.
 
 ![The overview: every project on the left, totals and activity on the right](docs/images/hero.png)
 
@@ -20,11 +20,11 @@ Glass Dashboard is a template for building your own dashboard: your GitHub repos
 
 - 🧭 **Rail and sheet** — every item ranked by when it last moved (Active, Quiet, Stale), with the selected one filling the page.
 - 🔌 **Pluggable sources** — mix GitHub repos and JSON files in one dashboard; write an adapter for anything else in a few lines.
-- 🐙 **GitHub built in** — versions from manifest files, releases with download counts, unreleased commits, CI state, open issues and PRs, and store links found in each README.
+- 🐙 **GitHub built in** — versions from manifest and project files, release and registry download counts, unreleased commits, CI state, open issues and PRs, and store links found in each README.
+- 💻 **Your local clones** — uncommitted changes and unpushed commits, merged into the matching GitHub repo.
 - 📈 **Activity over 1D, 1W, 1M or 1Y** — real timestamps counted by hour, six hours, day or week on your own clock.
 - 🚩 **Needs attention** — failing checks, waiting work and quiet items collected on the overview.
-- 🌗 **Light and dark** — follows your system, or pick one; the choice is remembered.
-- 🔮 **The glass band** — each item's name in heavy type, refracted through a rotating glass knot (WebGL, with a plain fallback).
+- 🔮 **The glass band, light or dark** — each item's name in heavy type, refracted through a rotating glass knot; follows your system theme or your pick.
 - 🔒 **Local and read-only** — listens on `127.0.0.1` only, refuses other sites, and never writes anywhere.
 
 ## 📸 Screenshots
@@ -33,8 +33,9 @@ Glass Dashboard is a template for building your own dashboard: your GitHub repos
 |---|---|
 | ![An item page with its activity chart and lists](docs/images/item.png) **Item page** — activity, milestones and what's due, side by side | ![The overview's activity and needs-attention list](docs/images/overview.png) **Overview** — activity across everything and what needs you |
 | ![An item with a failing service in dark mode](docs/images/dark.png) **Dark mode** — a failing service shows in red on the rail and in its facts | ![An item page on a phone](docs/images/mobile.png) **Phone** — the rail becomes a list, and each item opens full screen |
+| ![A GitHub repo with its version read from a .csproj](docs/images/github-item.png) **GitHub repo** — version from the project file, latest release with its downloads, CI and commits | ![Releases with download counts](docs/images/github-releases.png) **Releases** — every release with its download count, beside open PRs and issues |
 
-<sub>Screenshots use the sample data in `examples/sample.json`.</sub>
+<sub>The first four screenshots use the sample data in `examples/sample.json`; the GitHub ones show public repos.</sub>
 
 ---
 
@@ -56,18 +57,31 @@ git clone https://github.com/EY4O/glass-dashboard.git my-dashboard
 
 Download the repository as a ZIP from GitHub and unzip it anywhere.
 
-There's nothing to install: it needs [Node.js](https://nodejs.org) 20 or newer and has no packages. The GitHub source also needs the [GitHub CLI](https://cli.github.com), signed in with `gh auth login`.
+There's nothing to install: it needs [Node.js](https://nodejs.org) 20 or newer and has no packages. The GitHub source also needs the [GitHub CLI](https://cli.github.com), signed in with `gh auth login`, and the git source needs [Git](https://git-scm.com).
+
+<details>
+<summary><b>Windows: run it without a window, or start it at sign-in</b></summary>
+
+- **Open Dashboard.bat** (or **Start Dashboard.vbs**, which doesn't even flash) starts the server hidden, with nothing on the taskbar, and opens the page. Run it again to just open the page.
+- **Stop Dashboard.bat** (or **Stop Dashboard.vbs**) stops it. It only stops this folder's server, never another program on the port.
+- Server messages go to `server.log` in the folder.
+- To start it when you sign in: press **Win+R**, type `shell:startup`, and add a shortcut to `Start Dashboard.vbs` with `/nobrowser` at the end of its **Target**.
+</details>
 
 ## 🚀 Getting Started
 
 1. Run `npm start` (or `node server.mjs`, or double-click **Open Dashboard.bat** on Windows) and open <http://localhost:4400>. You'll see the sample dashboard.
-2. Open `dashboard.config.json` and set `title` and `noun` (what you call your items, like `["project", "projects"]`).
-3. Replace the `sources` list with your own. For your GitHub repos:
+2. Copy `dashboard.config.json` to `dashboard.config.local.json` and edit the copy. It's used instead of the default and stays out of git, so template updates never collide with it.
+3. Set `title` and `noun` (what you call your items, like `["project", "projects"]`).
+4. Replace the `sources` list with your own. For your GitHub repos and the clones on this computer:
    ```json
-   "sources": [{ "adapter": "github", "options": { "user": "@me" } }]
+   "sources": [
+     { "adapter": "github", "options": { "user": "@me" } },
+     { "adapter": "git", "options": { "roots": ["C:/Users/you/Projects"] } }
+   ]
    ```
    For anything else, copy `examples/sample.json`, edit it, and point a `json` source at it.
-4. Restart the server and press **Refresh**. Your items appear in the rail, and the overview fills in.
+5. Restart the server and press **Refresh**. Your items appear in the rail, and the overview fills in.
 
 ---
 
@@ -76,7 +90,7 @@ There's nothing to install: it needs [Node.js](https://nodejs.org) 20 or newer a
 <details>
 <summary><b>⚙️ The config file</b></summary>
 
-`dashboard.config.json` sits next to `server.mjs`. Use another file with `node server.mjs --config path/to/file.json` or the `DASHBOARD_CONFIG` environment variable; `PORT` overrides the port.
+The server uses `dashboard.config.local.json` if it exists (it's git-ignored, for your own settings), otherwise `dashboard.config.json`. Use another file with `node server.mjs --config path/to/file.json` or the `DASHBOARD_CONFIG` environment variable; `PORT` overrides the port.
 
 | Key | Meaning |
 |---|---|
@@ -86,7 +100,9 @@ There's nothing to install: it needs [Node.js](https://nodejs.org) 20 or newer a
 | `cacheMinutes` | How long a source's data is reused before it's fetched again (default 5; **Refresh** always fetches) |
 | `sources` | A list of `{ "adapter": "…", "label": "…", "options": { … } }`, loaded in order and merged |
 
-Examples are in `examples/`: `github.config.json` (your repos) and `mixed.config.json` (GitHub plus a JSON file in one dashboard).
+Examples are in `examples/`: `github.config.json` (your repos), `local.config.json` (your repos plus the clones on this computer) and `mixed.config.json` (GitHub plus a JSON file in one dashboard).
+
+To pull later template improvements into a dashboard made with **Use this template**, add this repository as a remote once (`git remote add template https://github.com/EY4O/glass-dashboard.git`) and run `git pull template main` whenever you like. Your local config is never touched.
 </details>
 
 <details>
@@ -94,11 +110,23 @@ Examples are in `examples/`: `github.config.json` (your repos) and `mixed.config
 
 Options: `{ "user": "@me" }` for your own repos (public and private), `{ "user": "octocat" }` for someone's public repos, `{ "org": "name" }` for an organisation, or `{ "repos": ["owner/name", …] }` for a fixed list. `includeForks` and `includeArchived` default to `true`.
 
-- **Version** comes from `manifest.json`, `package.json`, `pyproject.toml`, `Cargo.toml`, a `.csproj`, `project.godot` or `app.json`, then the latest git tag. The item page names the file it came from.
+- **Version** comes from `manifest.json`, `package.json`, `pyproject.toml`, `Cargo.toml`, `Directory.Build.props`, `project.godot` or `app.json` at the root, then a `.csproj` anywhere in the repo (skipping tests and samples, preferring the one named like the repo), then the latest git tag. The item page names the file it came from.
 - **Unreleased** counts commits since the latest release or tag. Older than a year shows as a floor, like `12+`.
 - **Downloads** are GitHub's counts for files attached to releases. Store installs and the automatic source-code zips aren't included, and the page says so.
+- **Registry downloads** come from the Comfy Registry (all-time) and npm (last 30 days) when the README or homepage links there. A repo published only on a registry shows that version as its latest release.
 - **Links** are the repo, its homepage, and store or registry links found in the README (Chrome Web Store, Edge Add-ons, Firefox Add-ons, Comfy Registry, npm, PyPI, VS Code Marketplace, itch.io, Steam, Google Play, App Store, GitHub Pages).
 - Everything goes through the GitHub CLI, so your token stays inside `gh` and never reaches the browser.
+</details>
+
+<details>
+<summary><b>💻 The git source</b></summary>
+
+Options: `{ "roots": ["C:/Users/you/Projects"] }` for every repo directly inside those folders, and/or `{ "repos": ["C:/path/to/repo"] }` for exact repos.
+
+- Each clone shows its uncommitted changes, commits not yet pushed, how far it's behind (as of your last `git fetch`) and its branch.
+- A clone whose `origin` is on GitHub merges into the matching repo from the GitHub source, so you see one item with both. Other clones appear on their own.
+- If a GitHub repo was renamed, update the clone's remote (`git remote set-url origin <new url>`) so the two match up.
+- It never runs `git fetch` or anything else that changes a repo.
 </details>
 
 <details>
@@ -123,7 +151,8 @@ An adapter is a file in `adapters/` that exports `{ list(options, ctx), detail?(
 - The server listens on `127.0.0.1` only and answers only to `localhost` and `127.0.0.1`, which blocks DNS-rebinding pages from reading your data.
 - API calls from other websites are refused, so a page you visit can't read the dashboard or make it refetch.
 - Only `public/` is served: your config, data files and adapters are never sent to the browser.
-- The bundled adapters only read. If one source fails (gh signed out, a JSON typo), the others still load and the overview says which one failed and why.
+- The bundled adapters only read. The git source never fetches. Registry download counts are read from the Comfy Registry and npm public APIs, which receive only the package name.
+- If one source fails (gh signed out, a JSON typo), the others still load and the overview says which one failed and why.
 </details>
 
 ---

@@ -3,13 +3,14 @@
 The repository root is the app: a dependency-free Node server, a single-page front end, and the adapters it loads.
 
 ```
-server.mjs            config loading, adapter loading, merging, cache, HTTP and its guards
+server.mjs            config loading, adapter loading, merging by key, cache, HTTP and its guards
 public/index.html     the whole front end: styles, the rail and sheet, the WebGL band
-adapters/             one file per data source (github, json, folders)
+adapters/             one file per data source (github, git, json, folders)
+*.vbs, *.bat          Windows launchers: start hidden, stop
 examples/             sample.json and example configs
 tests/                node:test suites
 docs/                 this file, ADAPTERS.md, README images
-dashboard.config.json the default config (sample data)
+dashboard.config.json the default config (sample data); dashboard.config.local.json overrides it
 ```
 
 ## Run it locally
@@ -45,6 +46,10 @@ npm test
 | items without a detail() report not found | the detail endpoint |
 | only public/ is served | static allow-list, path traversal, malformed escapes |
 | other hosts and other sites are refused | the Host and Sec-Fetch-Site guards |
+| items sharing a key merge into one | merging, and that cached data isn't merged twice |
+| git adapter reports uncommitted changes | a throwaway repo: changed files, no upstream, activity |
+
+GitHub Actions runs the suite on Ubuntu and Windows with Node 20 and 22 for every push and pull request.
 
 ## Releasing
 

@@ -1,0 +1,10 @@
+{
+  "title": "My code",
+  "noun": ["repo", "repos"],
+  "port": 4400,
+  "cacheMinutes": 5,
+  "sources": [
+    { "adapter": "github", "label": "GitHub", "options": { "user": "@me" } },
+    { "adapter": "git", "label": "This PC", "options": { "roots": ["C:/Users/you/Projects"] } }
+  ]
+}

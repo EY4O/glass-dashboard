@@ -3,6 +3,7 @@ node_modules/
 Thumbs.db
 *.log
 
-# Your own data and configs, if you keep them out of git
-data/
+# Your own settings and data, kept out of git so template updates never collide with them
+dashboard.config.local.json
 *.local.json
+data/

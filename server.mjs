@@ -4,6 +4,7 @@
 
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { extname, join, normalize, dirname, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -12,7 +13,9 @@ const PUBLIC = join(ROOT, "public");
 
 // ---------- config ----------
 const argConfig = (() => { const i = process.argv.indexOf("--config"); return i > -1 ? process.argv[i + 1] : null; })();
-const CONFIG_PATH = resolve(ROOT, argConfig || process.env.DASHBOARD_CONFIG || "dashboard.config.json");
+// Your own settings can live in dashboard.config.local.json (git-ignored), so template updates never collide with them
+const CONFIG_PATH = resolve(ROOT, argConfig || process.env.DASHBOARD_CONFIG
+  || (existsSync(join(ROOT, "dashboard.config.local.json")) ? "dashboard.config.local.json" : "dashboard.config.json"));
 const raw = JSON.parse(await readFile(CONFIG_PATH, "utf8"));
 const config = {
   title: raw.title || "Dashboard",
@@ -59,6 +62,7 @@ function normSection(s) {
 function normItem(it, src) {
   return {
     id: `${src.key}~${str(it.id || it.name)}`,
+    key: str(it.key).toLowerCase(),
     source: src.label,
     name: str(it.name || it.id),
     description: str(it.description),
@@ -95,6 +99,43 @@ async function loadSource(src, refresh) {
   return data;
 }
 
+// Items from different sources that share a `key` (a local clone and its GitHub repo, say) become one item.
+// The first source's item (or whichever has a detail page) leads; the other adds its badges, marks, facts,
+// attention, sections and links.
+function mergeByKey(items) {
+  const lead = new Map();
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (!it.key) continue;
+    let first = lead.get(it.key);
+    if (!first) { lead.set(it.key, it); continue; }
+    let other = it;
+    // The item with a detail page leads, whatever order the sources are listed in
+    if (it.hasDetail && !first.hasDetail) {
+      items[items.indexOf(first)] = it;
+      lead.set(it.key, it);
+      [first, other] = [it, first];
+    }
+    mergeInto(first, other);
+    items.splice(i--, 1); // position i held `it`; if it now leads, it also sits at the old leader's index
+  }
+}
+
+function mergeInto(first, it) {
+  first.source = first.source === it.source ? first.source : `${first.source} + ${it.source}`;
+  first.description ||= it.description;
+  first.url ||= it.url;
+  first.short ||= it.short;
+  if ((Date.parse(it.updatedAt) || 0) > (Date.parse(first.updatedAt) || 0)) first.updatedAt = it.updatedAt;
+  first.badges = [...new Set([...first.badges, ...it.badges])];
+  first.marks.push(...it.marks);
+  first.facts.push(...it.facts);
+  first.attention.push(...it.attention);
+  first.sections.push(...it.sections);
+  for (const l of it.links) if (!first.links.some((x) => x.href === l.href)) first.links.push(l);
+  if (!first.activity.length) { first.activity = it.activity; first.activityNoun = it.activityNoun; }
+}
+
 async function loadDashboard(refresh = false) {
   if (refresh) detailCache.clear();
   const results = await Promise.allSettled(sources.map((s) => loadSource(s, refresh)));
@@ -104,7 +145,7 @@ async function loadDashboard(refresh = false) {
       errors.push({ source: sources[i].label, message: r.reason?.message || "Failed to load.", hint: r.reason?.hint || "" });
       return;
     }
-    items.push(...r.value.items);
+    items.push(...structuredClone(r.value.items)); // merging edits items, so never touch the cached copies
     for (const s of r.value.stats) stats.set(s.label, (stats.get(s.label) || 0) + s.value);
     for (const s of r.value.sections) {
       const prev = sections.get(s.title);
@@ -119,6 +160,7 @@ async function loadDashboard(refresh = false) {
     }
     if (r.value.sentence) sentences.push(r.value.sentence);
   });
+  mergeByKey(items);
   // Most recently updated first; undated items last
   items.sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0));
   for (const s of sections.values()) if (s.rows.some((r) => r.sortKey)) s.rows.sort((a, b) => b.sortKey - a.sortKey);

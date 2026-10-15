@@ -54,6 +54,7 @@ Every field except `id` and `name` is optional. Anything missing is simply not s
 | Field | Type | Shown as |
 |---|---|---|
 | `id` | string | Unique within the source; used in the page's address |
+| `key` | string | Optional. Items from different sources with the same key become one item (see **Merging**) |
 | `name` | string | Rail entry, the glass band, the page title |
 | `description` | string | The large line under the band |
 | `url` | `https://…` | The name in the top bar links here |
@@ -109,6 +110,14 @@ Four facts fill a row; eight make two.
 - `half: true` sections pair up side by side.
 - `limit` shows that many rows with a **Show all** button for the rest.
 - Rows: `key` (short left column), `title`, `note` (muted, after the title), `strong` (an ink number) followed by `meta`, then `date` (shown as a date) and `time` (shown as "3h"). `tone: "fail"` or `"accent"` marks the key. Rows with an `href` link out.
+
+## Merging
+
+When two sources describe the same thing, give both items the same `key` (case doesn't matter). The GitHub source uses `owner/name`, and the git source sets the same key for a clone whose `origin` is on GitHub, so a repo and its local clone become one item.
+
+- The item from the source listed first leads, unless only the other one has a detail page; then that one leads, so the detail page is never lost.
+- The leader keeps its name, short label and activity (taking the other's if it has none). Badges are combined, the latest `updatedAt` wins, and marks, facts, attention notes, sections and links are added after the leader's.
+- The top bar shows both sources, e.g. "GitHub + This PC".
 
 ## Overview
 

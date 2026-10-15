@@ -78,12 +78,57 @@ function versionFrom(files) {
   if (files.pyproject) { const m = files.pyproject.match(/^\s*version\s*=\s*["']([^"']+)["']/m); if (m) return { value: m[1], source: "pyproject.toml" }; }
   if (files.cargo) { const m = files.cargo.match(/^\s*version\s*=\s*["']([^"']+)["']/m); if (m) return { value: m[1], source: "Cargo.toml" }; }
   if (files.csproj) { const m = files.csproj.text.match(/<(?:Version|AssemblyVersion)>([^<]+)</); if (m) return { value: m[1].trim(), source: files.csproj.name }; }
+  if (files.props) { const m = files.props.match(/<(?:Version|AssemblyVersion)>([^<]+)</); if (m) return { value: m[1].trim(), source: "Directory.Build.props" }; }
   if (files.godot) { const m = files.godot.match(/config\/version\s*=\s*"([^"]+)"/); if (m) return { value: m[1], source: "project.godot" }; }
   if (files.app) { try { const v = JSON.parse(files.app).expo?.version; if (v) return { value: v, source: "app.json" }; } catch {} }
   return null;
 }
 
 const sumDownloads = (release) => (release?.releaseAssets?.nodes || []).reduce((a, x) => a + x.downloadCount, 0);
+
+// .NET projects often keep the version in src/Name/Name.csproj. Walk the tree once, skip tests and
+// samples, prefer the project named like the repo, then a non-.Core one, then the shortest path.
+async function deepVersion(bin, fullName) {
+  const [owner, name] = fullName.split("/");
+  const tree = JSON.parse(await gh(bin, ["api", `repos/${fullName}/git/trees/HEAD?recursive=1`]));
+  const repo = name.toLowerCase();
+  const rank = (p) => {
+    const base = p.split("/").pop().toLowerCase();
+    return (base === `${repo}.csproj` ? 0 : /\.core\.csproj$/.test(base) ? 2 : 1) * 1000 + p.length;
+  };
+  const candidates = (tree.tree || [])
+    .filter((t) => t.type === "blob" && /\.csproj$/i.test(t.path) && !/(^|\/)(tests?|samples?|examples?|benchmarks?)\//i.test(t.path) && !/\.tests?\.csproj$/i.test(t.path))
+    .sort((a, b) => rank(a.path) - rank(b.path))
+    .slice(0, 3);
+  for (const c of candidates) {
+    const d = await graphql(bin, `query($o: String!, $n: String!, $e: String!) { repository(owner: $o, name: $n) { object(expression: $e) { ... on Blob { text } } } }`, { o: owner, n: name, e: `HEAD:${c.path}` });
+    const m = d.repository?.object?.text?.match(/<(?:Version|AssemblyVersion)>([^<]+)</);
+    if (m) return { value: m[1].trim(), source: c.path };
+  }
+  return null;
+}
+
+// Public download counts from package registries linked in the README or homepage.
+// These are public, read-only APIs; only the package name is sent.
+const fetchJson = async (url) => {
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000), headers: { "User-Agent": "glass-dashboard" } });
+  return res.ok ? res.json() : null;
+};
+async function registryStats(urls) {
+  for (const u of urls) {
+    let m = u.match(/registry\.comfy\.org\/nodes\/([^/?#\s]+)/i);
+    if (m) {
+      const r = await fetchJson(`https://api.comfy.org/nodes/${encodeURIComponent(m[1])}`);
+      if (r && Number.isFinite(r.downloads)) return { label: "Comfy Registry", downloads: r.downloads, version: r.latest_version?.version || "" };
+    }
+    m = u.match(/npmjs\.com\/package\/((?:@[^/\s]+\/)?[^/?#\s]+)/i);
+    if (m) {
+      const r = await fetchJson(`https://api.npmjs.org/downloads/point/last-month/${m[1]}`);
+      if (r && Number.isFinite(r.downloads)) return { label: "npm 30-day", downloads: r.downloads, version: "" };
+    }
+  }
+  return null;
+}
 
 // ---------- queries ----------
 const REPO_FIELDS = `
@@ -143,7 +188,8 @@ const FILE_FIELDS = `
   pyproject: object(expression: "HEAD:pyproject.toml") { ... on Blob { text } }
   cargo: object(expression: "HEAD:Cargo.toml") { ... on Blob { text } }
   godot: object(expression: "HEAD:project.godot") { ... on Blob { text } }
-  app: object(expression: "HEAD:app.json") { ... on Blob { text } }`;
+  app: object(expression: "HEAD:app.json") { ... on Blob { text } }
+  props: object(expression: "HEAD:Directory.Build.props") { ... on Blob { text } }`;
 
 async function fetchRepos(bin, o, since) {
   if (Array.isArray(o.repos) && o.repos.length) {
@@ -214,20 +260,39 @@ async function list(options) {
     Object.assign(files, await graphql(bin, `query { ${parts.join("\n")} }`));
   }
 
-  let unreleasedRepos = 0, openTotal = 0, ciRuns = 0, ciFailing = 0, downloadsTotal = 0;
+  const rootVersions = repos.map((n, i) => {
+    const f = files[`r${i}`] || {};
+    const cs = csprojPath(n);
+    return versionFrom({
+      manifest: f.manifest?.text, pkg: f.pkg?.text, pyproject: f.pyproject?.text, cargo: f.cargo?.text,
+      godot: f.godot?.text, app: f.app?.text, props: f.props?.text,
+      csproj: f.csproj?.text ? { text: f.csproj.text, name: cs.split("/").pop() } : null,
+    });
+  });
+
+  // Versions deeper in the tree (src/Name/Name.csproj), and download counts from package registries
+  const deep = new Map(), registry = new Map();
+  await Promise.all(repos.map(async (n, i) => {
+    if (!rootVersions[i]) {
+      const v = await deepVersion(bin, n.nameWithOwner).catch(() => null);
+      if (v) deep.set(n.nameWithOwner, v);
+    }
+    const urls = [n.homepageUrl || "", ...readmeLinks(files[`r${i}`]?.readme?.text).map((l) => l.href)];
+    const stats = await registryStats(urls).catch(() => null);
+    if (stats) registry.set(n.nameWithOwner, stats);
+  }));
+
+  let unreleasedRepos = 0, openTotal = 0, ciRuns = 0, ciFailing = 0, downloadsTotal = 0, registryTotal = 0;
   const releaseRows = [];
 
   const items = repos.map((n, i) => {
     const f = files[`r${i}`] || {};
     const head = n.defaultBranchRef?.target;
-    const cs = csprojPath(n);
     const tag = n.refs?.nodes?.[0];
     const tagDate = tag?.target?.committedDate || tag?.target?.target?.committedDate || null;
-    const version = versionFrom({
-      manifest: f.manifest?.text, pkg: f.pkg?.text, pyproject: f.pyproject?.text, cargo: f.cargo?.text,
-      godot: f.godot?.text, app: f.app?.text,
-      csproj: f.csproj?.text ? { text: f.csproj.text, name: cs.split("/").pop() } : null,
-    }) || (tag ? { value: tag.name.replace(/^v/i, ""), source: "git tag" } : null);
+    const version = rootVersions[i] || deep.get(n.nameWithOwner) || (tag ? { value: tag.name.replace(/^v/i, ""), source: "git tag" } : null);
+    const reg = registry.get(n.nameWithOwner);
+    if (reg) registryTotal += reg.downloads;
     const rel = n.latestRelease;
     const since = rel?.tagCommit?.committedDate || tagDate;
     const dates = [...(head?.year?.nodes?.map((c) => c.committedDate) || []), ...(more.get(n.nameWithOwner) || [])];
@@ -263,6 +328,7 @@ async function list(options) {
     const ciText = { SUCCESS: "Passing", FAILURE: "Failing", ERROR: "Error", PENDING: "Running", EXPECTED: "Waiting" }[ci];
     return {
       id: n.nameWithOwner,
+      key: n.nameWithOwner, // lets a local clone (git adapter) merge into this item
       name: n.name,
       description: n.description || "",
       url: n.url,
@@ -278,7 +344,8 @@ async function list(options) {
       ],
       facts: [
         version ? { label: "Version", value: version.value, note: `from ${version.source}` } : { label: "Version", value: "No version file found", absent: true },
-        rel ? { label: "Latest release", value: rel.tagName, note: `${day(rel.publishedAt)}${rel.releaseAssets.nodes.length ? ` · ${plural(relDownloads, "download", "downloads")}` : ""}` }
+        rel ? { label: "Latest release", value: rel.tagName, note: `${day(rel.publishedAt)}${rel.releaseAssets.nodes.length ? ` · ${plural(relDownloads, "download", "downloads")}` : ""}${reg ? ` · ${plural(reg.downloads, `${reg.label} download`, `${reg.label} downloads`)}` : ""}` }
+          : reg ? { label: "Latest release", value: reg.version || "Published", note: `${reg.label} · ${plural(reg.downloads, "download", "downloads")}` }
           : tag ? { label: "Latest release", value: "None", note: `latest tag ${tag.name}`, absent: true } : { label: "Latest release", value: "Never released", absent: true },
         unreleased === null ? { label: "Unreleased", value: "—", note: "no release to compare", absent: true }
           : { label: "Unreleased", value: String(unreleased), note: hasUnreleased ? `commits since ${rel?.tagName || tag?.name}` : "up to date", tone: hasUnreleased ? "accent" : "", count: typeof unreleased === "number" ? unreleased : null },
@@ -306,7 +373,11 @@ async function list(options) {
     items,
     overview: {
       sentence,
-      stats: [{ label: "Open issues + PRs", value: openTotal }, ...(downloadsTotal ? [{ label: "Release downloads", value: downloadsTotal }] : [])],
+      stats: [
+        { label: "Open issues + PRs", value: openTotal },
+        ...(downloadsTotal ? [{ label: "Release downloads", value: downloadsTotal }] : []),
+        ...(registryTotal ? [{ label: "Registry downloads", value: registryTotal }] : []),
+      ],
       sections: [{
         title: "Latest releases", total: downloadsTotal ? plural(downloadsTotal, "download", "downloads") : "", rows: releaseRows, empty: "No releases published yet.",
         footnote: downloadsTotal ? "Downloads count files attached to GitHub releases. Store installs and source-code zips aren't included." : "",

@@ -1,0 +1,5 @@
+* text=auto
+# Windows launchers need Windows line endings wherever they're checked out
+*.bat text eol=crlf
+*.vbs text eol=crlf
+*.png binary
