@@ -23,9 +23,9 @@ Glass Dashboard is a template for building your own dashboard: your GitHub repos
 - 🐙 **GitHub built in** — versions from manifest and project files, release and registry download counts, unreleased commits, CI state, open issues and PRs, and store links found in each README.
 - 💻 **Your local clones** — uncommitted changes and unpushed commits, merged into the matching GitHub repo.
 - 📈 **Activity over 1D, 1W, 1M or 1Y** — real timestamps counted by hour, six hours, day or week on your own clock.
-- 🚩 **Needs attention** — failing checks, waiting work and quiet items collected on the overview.
+- 🚩 **Needs attention** — failing checks, waiting work, unpushed commits and stale repos collected on the overview.
 - 🔮 **The glass band, light or dark** — each item's name in heavy type, refracted through a rotating glass knot; follows your system theme or your pick.
-- 🔒 **Local and read-only** — listens on `127.0.0.1` only, refuses other sites, and never writes anywhere.
+- 🔒 **Local and read-only** — your data stays on `127.0.0.1`, other sites are refused, and nothing is ever written.
 
 ## 📸 Screenshots
 
@@ -142,7 +142,7 @@ Dates can be absolute (`"2026-10-12T14:00:00Z"`) or relative to now (`"-3h"`, `"
 
 An adapter is a file in `adapters/` that exports `{ list(options, ctx), detail?(id, options, ctx), ttlMinutes? }`. `list` returns the items (and optional overview stats, sections and a sentence); `detail`, if present, is called when an item is opened and returns extra sections. Name it in the config with `"adapter": "your-file-name"`.
 
-`adapters/folders.mjs` is a complete 20-line example: every subfolder of a directory becomes an item. The full item shape and the section and row fields are in **[docs/ADAPTERS.md](docs/ADAPTERS.md)**.
+`adapters/folders.mjs` is a short, complete example: every subfolder of a directory becomes an item. The full item shape and the section and row fields are in **[docs/ADAPTERS.md](docs/ADAPTERS.md)**.
 </details>
 
 <details>
@@ -151,6 +151,7 @@ An adapter is a file in `adapters/` that exports `{ list(options, ctx), detail?(
 - The server listens on `127.0.0.1` only and answers only to `localhost` and `127.0.0.1`, which blocks DNS-rebinding pages from reading your data.
 - API calls from other websites are refused, so a page you visit can't read the dashboard or make it refetch.
 - Only `public/` is served: your config, data files and adapters are never sent to the browser.
+- The page itself loads the Inter Tight font from Google Fonts and three.js (for the glass band) from jsDelivr. Your data is never part of those requests. Offline, the page still works, with the system font and a plain title in place of the glass band.
 - The bundled adapters only read. The git source never fetches. Registry download counts are read from the Comfy Registry and npm public APIs, which receive only the package name.
 - If one source fails (gh signed out, a JSON typo), the others still load and the overview says which one failed and why.
 </details>

@@ -49,7 +49,7 @@ export default { list, ttlMinutes: 1 };
 
 ## Items
 
-Every field except `id` and `name` is optional. Anything missing is simply not shown.
+Every field except `id` and `name` is optional. Anything missing is simply not shown: the page never invents a placeholder. If "nothing" is itself the information (no version, never released), say it in words with `absent: true` or a `short` of your own.
 
 | Field | Type | Shown as |
 |---|---|---|
@@ -69,7 +69,16 @@ Every field except `id` and `name` is optional. Anything missing is simply not s
 | `links` | `{ label, href }[]` | The link grid at the bottom of the item page |
 | `sections` | section[] | Lists on the item page, in order |
 
-Dates are ISO strings (`2026-10-12T14:00:00Z`). The JSON source also accepts relative times: `-30m`, `-3h`, `-2d`, `-1w`.
+Dates are ISO strings (`2026-10-12T14:00:00Z`). The JSON source also accepts times relative to now: `-30m`, `-3h`, `-2d`, `-1w` in the past and `+5w` in the future (a future fact `time` reads "in 5 weeks").
+
+### Tones: spend colour sparingly
+
+The page is ink on paper; colour is a signal, so it only means something if it's rare.
+
+- `accent` is the prism. Use it for **one thing per item** that's done but not yet out: unreleased commits, tasks due, the next milestone. Never for decoration or emphasis.
+- `fail` is red, only for something broken: a failing check, a service that's down.
+- `pending` is amber, for work in progress that needs a hand: uncommitted changes, a running job.
+- Everything else gets no tone. A row or fact without a tone is the normal case.
 
 ### Marks
 

@@ -89,6 +89,7 @@ button { font: inherit; color: inherit; }
   font: 600 11px "Inter Tight", sans-serif; color: var(--mute); text-align: center;
 }
 .tabs { display: flex; flex-wrap: wrap; gap: 6px 4px; margin-top: 16px; }
+.tabs[hidden] { display: none; }
 .tabs button {
   padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; cursor: pointer;
   font-size: 13px; font-weight: 600; transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s;
@@ -113,7 +114,7 @@ button { font: inherit; color: inherit; }
 .row:hover > *, .row[aria-current="page"] > *, .row:hover .row-sub, .row[aria-current="page"] .row-sub { color: var(--bg); }
 .row:focus-visible { outline-offset: -2px; }
 .row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; }
-.row-ver { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.row-ver { max-width: 140px; justify-self: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .row-sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
 .row-overview { padding-top: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .row-overview .row-name { font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; }
@@ -125,6 +126,8 @@ button { font: inherit; color: inherit; }
 .mark--plain i { display: none; }
 .mark--fail i { background: var(--err); }
 .mark--pending i { background: var(--warn); }
+.row:hover .mark--fail i, .row[aria-current="page"] .mark--fail i,
+.row:hover .mark--pending i, .row[aria-current="page"] .mark--pending i { background: var(--bg); }
 .mark--new i { width: 14px; height: 2px; border-radius: 1px; background: var(--prism); }
 .mark .ico { font-size: 12px; }
 
@@ -158,6 +161,8 @@ button { font: inherit; color: inherit; }
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
 }
 .crumb { display: flex; align-items: center; gap: 12px; min-width: 0; font-size: 13px; font-weight: 600; }
+.crumb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crumb .pill { flex-shrink: 0; }
 .crumb a { text-decoration: none; white-space: nowrap; }
 .crumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .crumb .muted { color: var(--mute); font-weight: 500; }
@@ -236,7 +241,9 @@ button { font: inherit; color: inherit; }
 .list a *, .links a * { transition: color 0.3s var(--ease); }
 .list a:hover, .list a:hover *, .links a:hover, .links a:hover * { color: var(--bg); }
 .list a:hover .mark--fail i { background: var(--bg); }
-.list .k { font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+.list .k { min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+.list .k .mark { white-space: normal; align-items: baseline; }
+.list .k .mark i { flex-shrink: 0; align-self: center; }
 .list .t { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .list .t em { font-style: normal; font-weight: 500; color: var(--mute); }
 .list .r { font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
@@ -274,7 +281,7 @@ button { font: inherit; color: inherit; }
 .stats > div:nth-child(n + 5) { margin-top: 32px; }
 .stats b { display: block; font-size: clamp(44px, 5.6vw, 96px); font-weight: 900; line-height: 0.9; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .stats span { display: block; margin-top: 12px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
-.attn a { grid-template-columns: 200px minmax(0, 1fr) auto; }
+.attn a { grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; }
 
 /* Notices */
 .notice { max-width: 60ch; padding: 32px 0; }
@@ -413,13 +420,15 @@ button { font: inherit; color: inherit; }
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
   const ago = (iso) => {
     if (!iso) return "never";
-    const s = (Date.now() - Date.parse(iso)) / 1000;
+    // Works both ways: "3 hours ago" for the past, "in 5 weeks" for the future
+    const diff = (Date.now() - Date.parse(iso)) / 1000, s = Math.abs(diff), dir = diff >= 0 ? -1 : 1;
     if (s < 60) return "just now";
-    if (s < 3600) return rtf.format(-Math.round(s / 60), "minute");
-    if (s < 86400) return rtf.format(-Math.round(s / 3600), "hour");
-    if (s < 86400 * 30) return rtf.format(-Math.round(s / 86400), "day");
-    if (s < 86400 * 365) return rtf.format(-Math.round(s / (86400 * 30)), "month");
-    return rtf.format(-Math.round(s / (86400 * 365)), "year");
+    if (s < 3600) return rtf.format(dir * Math.round(s / 60), "minute");
+    if (s < 86400) return rtf.format(dir * Math.round(s / 3600), "hour");
+    if (s < 86400 * 14) return rtf.format(dir * Math.round(s / 86400), "day");
+    if (s < 86400 * 60) return rtf.format(dir * Math.round(s / (86400 * 7)), "week");
+    if (s < 86400 * 365) return rtf.format(dir * Math.round(s / (86400 * 30)), "month");
+    return rtf.format(dir * Math.round(s / (86400 * 365)), "year");
   };
   const short = (iso) => {
     if (!iso) return "";
@@ -488,8 +497,11 @@ button { font: inherit; color: inherit; }
     // Filters come from the items' own badges (Public/Private for GitHub, your tags for JSON)
     const counts = new Map();
     state.data.items.forEach((it) => it.badges.forEach((b) => counts.set(b, (counts.get(b) || 0) + 1)));
-    const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    // A badge every item carries filters nothing, so it gets no tab
+    const top = [...counts].filter(([, n]) => n < state.data.items.length).sort((a, b) => b[1] - a[1]).slice(0, 8);
     if (state.filter !== "all" && !counts.has(state.filter)) state.filter = "all";
+    // With nothing to filter by, a lone "All" chip would be a control that does nothing
+    $("[data-tabs]").hidden = !top.length;
     $("[data-tabs]").innerHTML = [["all", "All", state.data.items.length], ...top.map(([b, n]) => [b, b, n])]
       .map(([v, label, n]) => `<button type="button" data-filter="${esc(v)}" aria-pressed="${state.filter === v}">${esc(label)}<span class="count">${n}</span></button>`).join("");
     document.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => { state.filter = b.dataset.filter; renderTabs(); renderRail(); }));
@@ -516,7 +528,7 @@ button { font: inherit; color: inherit; }
           ${rs.map((it) => `
             <a class="row" href="#/item/${encodeURIComponent(it.id)}" data-id="${esc(it.id)}" ${current === it.id ? 'aria-current="page"' : ""}>
               <span class="row-name">${esc(it.name)}</span>
-              <span class="row-ver">${it.short ? esc(it.short) : "—"}</span>
+              ${it.short ? `<span class="row-ver">${esc(it.short)}</span>` : ""}
               <span class="row-sub"><span>${short(it.updatedAt)}</span>${marks(it)}</span>
             </a>`).join("")}
         </section>`).join("")}
@@ -552,7 +564,9 @@ button { font: inherit; color: inherit; }
   };
 
   // Facts: a definition grid; absent values are said in words
-  const factsHtml = (facts) => !facts.length ? "" : `<dl class="facts rv">${facts.map((f) => {
+  const factsHtml = (all) => {
+    const facts = all.filter((f) => f.value || f.time);
+    return !facts.length ? "" : `<dl class="facts rv">${facts.map((f) => {
     let value = f.time ? esc(ago(f.time)) : esc(f.value);
     if (f.count != null && !f.time) value = `<span data-count="${f.count}">${esc(f.value)}</span>`;
     if (f.tone === "accent") value = `<span class="prism">${value}</span>`;
@@ -560,6 +574,7 @@ button { font: inherit; color: inherit; }
     const note = f.note || (f.time ? day(f.time) : "");
     return `<div><dt>${esc(f.label)}</dt><dd class="${f.absent ? "absent" : ""}">${value}${note ? `<small>${esc(note)}</small>` : ""}</dd></div>`;
   }).join("")}</dl>`;
+  };
 
   // Rows: key · title (note) · meta; rows with a link get the ink wipe
   const rowMeta = (r) => [
@@ -713,7 +728,7 @@ button { font: inherit; color: inherit; }
     const attn = items.flatMap((it) => it.attention.map((a) => ({ it, ...a })));
     const lede = `${items.length} ${nounOf(items.length, noun)}, ${week.length} updated this week.${overview.sentence ? ` ${overview.sentence}` : ""}`;
     state.sectionNo = 1;
-    setTitle(state.data.title, `<span>${esc(state.data.title)}</span><span class="muted">/ overview</span>`);
+    setTitle(state.data.title, `<span class="crumb-name"><span class="owner">${esc(state.data.title)} / </span><b>Overview</b></span>`);
     body.innerHTML = `
       ${errors.length ? `<div class="notice notice--inline rv">${errors.map((e) => `<p><b>${esc(e.source)} didn't load.</b> ${esc(e.message)}${e.hint ? ` ${esc(e.hint)}` : ""}</p>`).join("")}</div>` : ""}
       <p class="lede">${splitWords(lede)}</p>
@@ -742,7 +757,7 @@ button { font: inherit; color: inherit; }
   const renderItem = (it, animate) => {
     const d = state.detail.get(it.id);
     state.sectionNo = 1;
-    setTitle(it.name, `${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">` : "<span>"}<span class="owner">${esc(it.source)} / </span><b>${esc(it.name)}</b>${it.url ? "</a>" : "</span>"}${it.badges.map((b) => `<span class="pill">${esc(b)}</span>`).join("")}`);
+    setTitle(it.name, `${it.url ? `<a class="crumb-name" href="${esc(it.url)}" target="_blank" rel="noopener">` : `<span class="crumb-name">`}<span class="owner">${esc(it.source)} / </span><b>${esc(it.name)}</b>${it.url ? "</a>" : "</span>"}${it.badges.map((b) => `<span class="pill">${esc(b)}</span>`).join("")}`);
     body.innerHTML = `
       <p class="lede">${it.description ? splitWords(it.description) : `<span class="none">${splitWords("No description.")}</span>`}</p>
       ${factsHtml(it.facts)}

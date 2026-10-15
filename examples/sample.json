@@ -62,8 +62,7 @@
         },
         {
           "label": "Launch",
-          "value": "Nov 18",
-          "note": "5 weeks out"
+          "time": "+5w"
         },
         {
           "label": "Tasks due",
@@ -208,7 +207,7 @@
             {
               "key": "Later",
               "title": "Launch and redirects",
-              "note": "Nov 18"
+              "date": "+5w"
             }
           ]
         },

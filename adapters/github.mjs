@@ -333,7 +333,7 @@ async function list(options) {
       description: n.description || "",
       url: n.url,
       updatedAt: n.pushedAt,
-      short: version?.value || "",
+      short: version?.value || "—", // a repo with no version says so, rather than leaving a gap
       badges: [n.isPrivate ? "Private" : "Public", ...(n.isFork ? ["Fork"] : []), ...(n.isArchived ? ["Archived"] : [])],
       marks: [
         ...(failing ? [{ tone: "fail", label: "CI", title: "CI failing" }] : ci === "PENDING" || ci === "EXPECTED" ? [{ tone: "pending", label: "CI", title: "CI running" }] : []),
@@ -362,7 +362,7 @@ async function list(options) {
         ...(prs ? [{ label: plural(prs, "open PR", "open PRs"), text: n.description || "" }] : []),
         ...(issues ? [{ label: plural(issues, "open issue", "open issues"), text: n.description || "" }] : []),
         ...(hasUnreleased ? [{ label: `${unreleased} since ${rel?.tagName || tag?.name}`, tone: "accent", text: head?.messageHeadline || "" }] : []),
-        ...((Date.now() - Date.parse(n.pushedAt)) / DAY > 28 && !n.isArchived ? [{ label: `Quiet ${Math.round((Date.now() - Date.parse(n.pushedAt)) / DAY)} days`, text: n.description || "" }] : []),
+        ...((Date.now() - Date.parse(n.pushedAt)) / DAY > 28 && !n.isArchived ? [{ label: `Stale ${Math.round((Date.now() - Date.parse(n.pushedAt)) / DAY)} days`, text: n.description || "" }] : []),
       ],
       links,
     };
