@@ -79,8 +79,8 @@ async function list(options, ctx) {
       badges: ["Local"],
       marks,
       facts: [
-        { label: "Local changes", value: changed ? plural(changed, "file", "files") : "Clean", note: changed ? "uncommitted" : "nothing uncommitted", tone: changed ? "accent" : "" },
-        ahead === null ? { label: "Unpushed", value: "No upstream", absent: true } : { label: "Unpushed", value: String(ahead), note: ahead ? `${ahead === 1 ? "commit" : "commits"} to push` : "all pushed", tone: ahead ? "accent" : "" },
+        { label: "Local changes", value: changed ? plural(changed, "file", "files") : "Clean", note: changed ? "uncommitted" : "nothing uncommitted", tone: changed ? "pending" : "" },
+        ahead === null ? { label: "Unpushed", value: "No upstream", absent: true } : { label: "Unpushed", value: String(ahead), note: ahead ? `${ahead === 1 ? "commit" : "commits"} to push` : "all pushed", tone: ahead ? "pending" : "" },
         behind === null ? { label: "Behind", value: "—", note: "no upstream branch", absent: true } : { label: "Behind", value: String(behind), note: "as of the last fetch" },
         { label: "Branch", value: branch || "—", note: dir },
       ],

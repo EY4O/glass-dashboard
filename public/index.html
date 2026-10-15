@@ -198,6 +198,7 @@ button { font: inherit; color: inherit; }
 .facts dd.absent { color: var(--mute); font-weight: 600; font-size: 18px; letter-spacing: -0.01em; line-height: 1.2; }
 .facts dd .prism { background: var(--prism); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .facts dd .fail { color: var(--err); }
+.facts dd .pend { color: var(--warn); }
 
 .block { margin-top: 88px; }
 .block-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -240,7 +241,7 @@ button { font: inherit; color: inherit; }
 .list a:hover::before, .links a:hover::before { transform: scaleY(1); }
 .list a *, .links a * { transition: color 0.3s var(--ease); }
 .list a:hover, .list a:hover *, .links a:hover, .links a:hover * { color: var(--bg); }
-.list a:hover .mark--fail i { background: var(--bg); }
+.list a:hover .mark--fail i, .list a:hover .mark--pending i { background: var(--bg); }
 .list .k { min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
 .list .k .mark { white-space: normal; align-items: baseline; }
 .list .k .mark i { flex-shrink: 0; align-self: center; }
@@ -268,10 +269,6 @@ button { font: inherit; color: inherit; }
 .links span { min-width: 0; }
 .links .ico { font-size: 24px; transition: rotate 0.5s var(--ease); }
 .links a:hover .ico { rotate: 45deg; }
-.langs { display: flex; height: 6px; margin-top: 28px; gap: 2px; }
-.langs i { display: block; background: var(--fg); }
-.langs-key { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; font-size: 13px; color: var(--mute); }
-.langs-key b { color: var(--fg); font-weight: 600; }
 
 /* Overview */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 44px; border-top: 1.5px solid var(--fg); }
@@ -571,6 +568,7 @@ button { font: inherit; color: inherit; }
     if (f.count != null && !f.time) value = `<span data-count="${f.count}">${esc(f.value)}</span>`;
     if (f.tone === "accent") value = `<span class="prism">${value}</span>`;
     if (f.tone === "fail") value = `<span class="fail">${value}</span>`;
+    if (f.tone === "pending") value = `<span class="pend">${value}</span>`;
     const note = f.note || (f.time ? day(f.time) : "");
     return `<div><dt>${esc(f.label)}</dt><dd class="${f.absent ? "absent" : ""}">${value}${note ? `<small>${esc(note)}</small>` : ""}</dd></div>`;
   }).join("")}</dl>`;

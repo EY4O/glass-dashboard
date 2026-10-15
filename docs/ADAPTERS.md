@@ -60,7 +60,7 @@ Every field except `id` and `name` is optional. Anything missing is simply not s
 | `url` | `https://…` | The name in the top bar links here |
 | `updatedAt` | date | Rail grouping (Active ≤ 7 days, Quiet ≤ 28, Stale, Undated), sort order, and the "new since your last visit" mark |
 | `short` | string | The right side of the rail entry (a version, a phase, `6/7 up`) |
-| `badges` | string[] | Pills in the top bar, and the rail's filter tabs (the four most common badges become tabs). The JSON source also accepts `tags` |
+| `badges` | string[] | Pills in the top bar, and the rail's filter tabs: up to eight of the most common badges become tabs, skipping any badge every item has (it would filter nothing); with none left, the tabs row is hidden. The JSON source also accepts `tags` |
 | `marks` | mark[] | Small signals on the rail entry |
 | `facts` | fact[] | The definition grid on the item page |
 | `activity` | date[] | Timestamps for the activity chart (1D, 1W, 1M, 1Y) and the overview's totals |
@@ -90,7 +90,7 @@ The page is ink on paper; colour is a signal, so it only means something if it's
 
 - `time` (a date) instead of `value` shows "3 hours ago" with the date as the note, kept current in the browser.
 - `count` (a number) makes the value count up when the page opens.
-- `tone: "accent"` sets the value in the prism; `tone: "fail"` in red.
+- `tone: "accent"` sets the value in the prism, `tone: "fail"` in red and `tone: "pending"` in amber (see **Tones** below).
 - `absent: true` sets it as a muted statement ("Never released", "Not booked"). Say what's missing in words rather than leaving a blank.
 
 Four facts fill a row; eight make two.

@@ -1,6 +1,6 @@
 {
   "name": "glass-dashboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A local dashboard for whatever you track, with pluggable data adapters. No dependencies.",
   "private": true,
   "type": "module",
